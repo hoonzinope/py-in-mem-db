@@ -9,12 +9,22 @@ class inMemoryDB:
         self.expiration_thread = Thread(target=self._delete_expired, daemon=True)
         self.expiration_thread.start()
 
+        self.key_data_type = str  # Default key type
+        self.value_data_type = str  # Default value type
+
         self.logger = logger(self.__class__.__name__)
         self.logger.log("Initialized in-memory database")
 
     # Store a value with a key and an optional expiration time in days
     # If expiration_time is None, it defaults to 7 seconds
     def put(self, key, value, expiration_time):
+        if not isinstance(key, self.key_data_type):
+            self.logger.log(f"Invalid key type: {type(key)}. Must be {self.key_data_type.__name__}.")
+            raise TypeError(f"Key must be of type {self.key_data_type.__name__}")
+        if not isinstance(value, self.value_data_type):
+            self.logger.log(f"Invalid value type: {type(value)}. Must be {self.value_data_type.__name__}.")
+            raise TypeError(f"Value must be of type {self.value_data_type.__name__}")
+        
         with self.lock:  # Ensure thread safety when modifying the data
             expiration_time = self._convert_expiration_time_parameter(expiration_time)
             self.data[key] = { "value" : value, "expiration_time": expiration_time }
