@@ -7,6 +7,7 @@
 - 메모리 내에서 데이터 저장 및 조회
 - Key-Value 형태의 데이터 관리
 - CRUD(생성, 조회, 수정, 삭제) 지원
+- 데이터 만료 시간(TTL) 지원
 - 외부 의존성 없이 순수 파이썬 구현
 
 ## 설치
@@ -38,7 +39,8 @@ print(db.get('user:1'))     # None
 
 ## API
 
-- `put(key, value)` : 키에 값을 저장합니다.
+- `put(key, value, expiration_time=None)` : 키에 값을 저장합니다. expiration_time을 지정하면 해당 시간(초) 후에 데이터가 만료됩니다. 
+  - expiration_time이 None이면 기본값 7초로 설정됩니다.
 - `get(key)` : 키로 값을 조회합니다.
 - `delete(key)` : 키-값 쌍을 삭제합니다.
 - `clear()` : 데이터베이스의 모든 데이터를 삭제합니다.
