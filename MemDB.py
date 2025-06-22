@@ -1,8 +1,12 @@
 import time
-
+from threading import Thread, Lock
 class inMemoryDB:
     def __init__(self):
         self.data = {}
+        self.lock = Lock()  # To ensure thread safety
+        # Start a background thread to periodically delete expired keys
+        self.expiration_thread = Thread(target=self._delete_expired, daemon=True)
+        self.expiration_thread.start()
 
     # Store a value with a key and an optional expiration time in days
     # If expiration_time is None, it defaults to 7 seconds
@@ -36,6 +40,18 @@ class inMemoryDB:
     def delete(self, key):
         if key in self.data:
             del self.data[key]
+
+    def _delete_expired(self):
+        current_time = time.time()
+        keys_to_delete = []
+        for key, value in self.data.items():
+            if value.get("expiration_time") is not None and value["expiration_time"] < current_time:
+                keys_to_delete.append(key)
+        # Delete all expired keys
+        for key in keys_to_delete:
+            del self.data[key]
+        # Schedule the next run of this method
+        Thread(target=self._delete_expired, daemon=True).start()
 
     def clear(self):
         self.data.clear()
