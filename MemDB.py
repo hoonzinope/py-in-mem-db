@@ -17,8 +17,10 @@ def transaction_safe_clean_data(func):
         if self.in_transaction:
             return func(self, *args, **kwargs)
         else:
-            self._clean_expired()
-            return func(self, *args, **kwargs)
+            with self.lock:
+                # Clean expired keys before executing the function
+                self._clean_expired()
+                return func(self, *args, **kwargs)
     return wrapper
 
 class inMemoryDB:
@@ -246,15 +248,14 @@ class inMemoryDB:
         return len(self.data)
     
     def _clean_expired(self):
-        with self.lock:
-            current_time = time.time()
-            keys_to_delete = []
-            for key, value in self.data.items():
-                if value.get("expiration_time") is not None and value["expiration_time"] < current_time:
-                    keys_to_delete.append(key)
-            # Delete all expired keys
-            for key in keys_to_delete:
-                del self.data[key]
+        current_time = time.time()
+        keys_to_delete = []
+        for key, value in self.data.items():
+            if value.get("expiration_time") is not None and value["expiration_time"] < current_time:
+                keys_to_delete.append(key)
+        # Delete all expired keys
+        for key in keys_to_delete:
+            del self.data[key]
 
     def help(self):
         return (
