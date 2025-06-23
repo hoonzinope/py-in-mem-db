@@ -51,6 +51,15 @@ class command:
             return self.return_msg(f"Size: {self.memdb.size()}")
         elif action == "help":
             return self.memdb.help()
+        elif action == "begin":
+            self.memdb.begin_transaction()
+            return self.return_msg("Transaction started")
+        elif action == "commit":
+            self.memdb.commit_transaction()
+            return self.return_msg("Transaction committed")
+        elif action == "rollback":
+            self.memdb.rollback_transaction()
+            return self.return_msg("Transaction rolled back")
         else:
             return self.return_msg("Unknown command. Type 'help' for a list of commands.")
     

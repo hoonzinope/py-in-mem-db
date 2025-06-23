@@ -1,34 +1,102 @@
 import time
 from threading import Thread, Lock
 from SysLog import logger
+import copy
 class inMemoryDB:
     def __init__(self):
         self.data = {}
+        self.org_data = {}
         self.lock = Lock()  # To ensure thread safety
-        # Start a background thread to periodically delete expired keys
-        self.expiration_thread = Thread(target=self._delete_expired, daemon=True)
-        self.expiration_thread.start()
+        self.in_transaction = False  # Flag to indicate if a transaction is in progress
+        self.logger = logger(self.__class__.__name__)
+        self.logger.log("Initialized in-memory database")
 
         self.key_data_type = str  # Default key type
         self.value_data_type = str  # Default value type
 
-        self.logger = logger(self.__class__.__name__)
-        self.logger.log("Initialized in-memory database")
+        # Start a background thread to periodically delete expired keys
+        self.expiration_thread = Thread(target=self._delete_expired, daemon=True)
+        self.expiration_thread.start()
+
+    def set_key_data_type(self, key_data_type):
+        if not isinstance(key_data_type, type):
+            self.logger.log(f"Invalid key data type: {key_data_type}. Must be a type.")
+            raise TypeError("Key data type must be a type")
+        self.key_data_type = key_data_type
+        self.logger.log(f"Set key data type to {self.key_data_type.__name__}")
+
+    def set_value_data_type(self, value_data_type):
+        if not isinstance(value_data_type, type):
+            self.logger.log(f"Invalid value data type: {value_data_type}. Must be a type.")
+            raise TypeError("Value data type must be a type")
+        self.value_data_type = value_data_type
+        self.logger.log(f"Set value data type to {self.value_data_type.__name__}")
+
+    def begin_transaction(self):
+        self.lock.acquire()  # Acquire the lock to ensure thread safety
+        try:
+            if self.in_transaction:
+                self.logger.log("Transaction already in progress")
+                raise RuntimeError("Transaction already in progress")
+            self.org_data = copy.deepcopy(self.data)  # Store the original data
+            self.in_transaction = True
+            self.logger.log("Transaction started")
+        except Exception as e:
+            self.logger.log(f"Error starting transaction: {e}")
+            self.lock.release()
+            raise
+
+    def commit_transaction(self):
+        try:
+            if not self.in_transaction:
+                self.logger.log("No transaction in progress to commit")
+                raise RuntimeError("No transaction in progress")
+            self.org_data = {}
+            self.in_transaction = False
+            self.logger.log("Transaction committed")
+        except Exception as e:
+            self.logger.log(f"Error during commit: {e}")
+            self.rollback_transaction()
+            raise
+        finally:
+            self.lock.release()
+
+    def rollback_transaction(self):
+        try:
+            if not self.in_transaction:
+                self.logger.log("No transaction in progress to rollback")
+                raise RuntimeError("No transaction in progress")
+            self.data = copy.deepcopy(self.org_data)  # Restore the original data
+            self.org_data = {}  # Clear the original data
+            self.in_transaction = False
+            self.logger.log("Transaction rolled back")
+        except Exception as e:
+            self.logger.log(f"Error during rollback: {e}")
+        finally:
+            self.lock.release()
 
     # Store a value with a key and an optional expiration time in days
     # If expiration_time is None, it defaults to 7 seconds
     def put(self, key, value, expiration_time):
+        self._check_key_value_types(key, value)
+        if self.in_transaction:
+            self._put(key, value, expiration_time)
+        else:
+            with self.lock:  # Ensure thread safety when modifying the data
+                self._put(key, value, expiration_time)
+
+    def _put(self, key, value, expiration_time):
+        expiration_time = self._convert_expiration_time_parameter(expiration_time)
+        self.data[key] = { "value": value, "expiration_time": expiration_time }
+        self.logger.log(f"Internally stored {key}: {value} with expiration time of {expiration_time - time.time()} seconds")
+
+    def _check_key_value_types(self, key, value):
         if not isinstance(key, self.key_data_type):
             self.logger.log(f"Invalid key type: {type(key)}. Must be {self.key_data_type.__name__}.")
             raise TypeError(f"Key must be of type {self.key_data_type.__name__}")
         if not isinstance(value, self.value_data_type):
             self.logger.log(f"Invalid value type: {type(value)}. Must be {self.value_data_type.__name__}.")
             raise TypeError(f"Value must be of type {self.value_data_type.__name__}")
-        
-        with self.lock:  # Ensure thread safety when modifying the data
-            expiration_time = self._convert_expiration_time_parameter(expiration_time)
-            self.data[key] = { "value" : value, "expiration_time": expiration_time }
-            self.logger.log(f"Stored {key}: {value} with expiration time of {expiration_time - time.time()} seconds")
 
     def _convert_expiration_time_parameter(self, expiration_time):
         if expiration_time is not None:
@@ -74,78 +142,112 @@ class inMemoryDB:
     # lazy expiration
     # If the key has an expiration time, check if it has expired before returning the value
     def get(self, key):
-        with self.lock:  # Ensure thread safety when accessing the data
-            result = None
-            log_msg = f"Retrieving {key}"
-
-            if key not in self.data:
-                log_msg += " - Key not found"
-            elif self.data[key].get("expiration_time") is not None:
+        if self.in_transaction:
+            return self._get(key)
+        else:
+            with self.lock:  # Ensure thread safety when accessing the data
+                return self._get(key)
+    
+    def _get(self, key):
+        if key in self.data:
+            if self.data[key].get("expiration_time") is not None:
                 if self.data[key]["expiration_time"] < time.time():
                     del self.data[key]
-                    log_msg += " - Key has expired"
+                    self.logger.log(f"Key {key} has expired and was deleted")
+                    return None
                 else:
-                    result = self.data[key]["value"]
+                    return self.data[key]["value"]
             else:
-                result = self.data[key]["value"]
+                return self.data[key]["value"]
+        else:
+            self.logger.log(f"Key {key} not found")
+            return None
 
-            self.logger.log(log_msg)
-            return result
-        
     def delete(self, key):
-        with self.lock:
-            if key in self.data:
-                del self.data[key]
-                self.logger.log(f"Deleted {key}")
-            else:
-                self.logger.log(f"Attempted to delete {key}, but it does not exist")
+        if self.in_transaction:
+            self._delete(key)
+        else:
+            with self.lock:
+                self._delete(key)
+
+    def _delete(self, key):
+        if key in self.data:
+            del self.data[key]
+            self.logger.log(f"Internally deleted {key}")
+        else:
+            self.logger.log(f"Attempted to internally delete {key}, but it does not exist")
 
     def _delete_expired(self):
-        while True:
-            self._clean_expired()
-            time.sleep(1)
+        if not self.in_transaction:
+            while True:
+                self._clean_expired()
+                time.sleep(1)
 
     def clear(self):
-        with self.lock:
-            self.data.clear()
+        if self.in_transaction:
+            self._clear()
+        else:
+            with self.lock:
+                self._clear()
         self.logger.log("Cleared all data in the database")
 
+    def _clear(self):
+        self.data.clear()
+        self.logger.log("Internally cleared all data in the database")
+
     def exists(self, key):
-        with self.lock:
-            self.logger.log(f"Checking existence of {key}")
-            if key not in self.data:
-                self.logger.log(f"{key} does not exist")
-                return False
-            else:
-                # Check if the key has expired
-                if self.data[key].get("expiration_time") is not None:
-                    if self.data[key]["expiration_time"] < time.time():
-                        del self.data[key]
-                        self.logger.log(f"{key} has expired and was deleted")
-                        return False
-                    else:
-                        self.logger.log(f"{key} exists and has not expired")
-                        return True
+        if self.in_transaction:
+            return self._exists(key)
+        else:
+            with self.lock:
+                return self._exists(key)
     
+    def _exists(self, key):
+        if key in self.data:
+            if self.data[key].get("expiration_time") is not None:
+                if self.data[key]["expiration_time"] < time.time():
+                    del self.data[key]
+                    self.logger.log(f"Key {key} has expired and was deleted")
+                    return False
+                else:
+                    return True
+            else:
+                return True
+        else:
+            self.logger.log(f"Key {key} not found")
+            return False
+
     def keys(self):
         self.logger.log("Retrieving all keys")
-        self._clean_expired()
-        return list(self.data.keys())
+        if self.in_transaction:
+            return list(self.data.keys())
+        else:
+            self._clean_expired()
+            return list(self.data.keys())
     
     def values(self):
         self.logger.log("Retrieving all values")
-        self._clean_expired()
-        return list(self.data.values())
+        if self.in_transaction:
+            return list(self.data.values())
+        else:    
+            self._clean_expired()
+            return list(self.data.values())
     
     def items(self):
         self.logger.log("Retrieving all key-value pairs")
-        self._clean_expired()
-        return list(self.data.items())
+        if self.in_transaction:
+            return list(self.data.items())
+        else:
+            self._clean_expired()
+            return list(self.data.items())
     
     def size(self):
-        self._clean_expired()
-        self.logger.log(f"Retrieving size of the database: {len(self.data)}")
-        return len(self.data)
+        self.logger.log(f"Retrieving size of the database")
+        if self.in_transaction:
+            return len(self.data)
+        else:
+            self._clean_expired()
+            return len(self.data)
     
     def _clean_expired(self):
         with self.lock:
@@ -157,7 +259,6 @@ class inMemoryDB:
             # Delete all expired keys
             for key in keys_to_delete:
                 del self.data[key]
-            self.logger.log(f"Cleaned up expired keys: {keys_to_delete}")
 
     def help(self):
         return (
