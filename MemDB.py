@@ -43,7 +43,8 @@ class inMemoryDB:
             self.logger.log("Transaction started")
         except Exception as e:
             self.logger.log(f"Error starting transaction: {e}")
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release() 
             raise
 
     def commit_transaction(self):
@@ -59,7 +60,8 @@ class inMemoryDB:
             self.rollback_transaction()
             raise
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def rollback_transaction(self):
         try:
@@ -73,7 +75,8 @@ class inMemoryDB:
         except Exception as e:
             self.logger.log(f"Error during rollback: {e}")
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     # Store a value with a key and an optional expiration time in days
     # If expiration_time is None, it defaults to 7 seconds
