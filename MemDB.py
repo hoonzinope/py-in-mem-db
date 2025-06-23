@@ -2,6 +2,25 @@ import time
 from threading import Thread, Lock
 from SysLog import logger
 import copy
+
+def transaction_safe(func):
+    def wrapper(self, *args, **kwargs):
+        if self.in_transaction:
+            return func(self, *args, **kwargs)
+        else:
+            with self.lock:
+                return func(self, *args, **kwargs)
+    return wrapper
+
+def transaction_safe_clean_data(func):
+    def wrapper(self, *args, **kwargs):
+        if self.in_transaction:
+            return func(self, *args, **kwargs)
+        else:
+            self._clean_expired()
+            return func(self, *args, **kwargs)
+    return wrapper
+
 class inMemoryDB:
     def __init__(self):
         self.data = {}
@@ -80,13 +99,10 @@ class inMemoryDB:
 
     # Store a value with a key and an optional expiration time in days
     # If expiration_time is None, it defaults to 7 seconds
+    @transaction_safe
     def put(self, key, value, expiration_time):
         self._check_key_value_types(key, value)
-        if self.in_transaction:
-            self._put(key, value, expiration_time)
-        else:
-            with self.lock:  # Ensure thread safety when modifying the data
-                self._put(key, value, expiration_time)
+        self._put(key, value, expiration_time)
 
     def _put(self, key, value, expiration_time):
         expiration_time = self._convert_expiration_time_parameter(expiration_time)
@@ -142,15 +158,13 @@ class inMemoryDB:
             expiration_time = time.time() + 7
 
         return expiration_time
+    
+    @transaction_safe
+    def get(self, key):
+        return self._get(key)
+    
     # lazy expiration
     # If the key has an expiration time, check if it has expired before returning the value
-    def get(self, key):
-        if self.in_transaction:
-            return self._get(key)
-        else:
-            with self.lock:  # Ensure thread safety when accessing the data
-                return self._get(key)
-    
     def _get(self, key):
         if key in self.data:
             if self.data[key].get("expiration_time") is not None:
@@ -165,13 +179,10 @@ class inMemoryDB:
         else:
             self.logger.log(f"Key {key} not found")
             return None
-
+        
+    @transaction_safe
     def delete(self, key):
-        if self.in_transaction:
-            self._delete(key)
-        else:
-            with self.lock:
-                self._delete(key)
+        self._delete(key)
 
     def _delete(self, key):
         if key in self.data:
@@ -186,24 +197,18 @@ class inMemoryDB:
                 self._clean_expired()
                 time.sleep(1)
 
+    @transaction_safe
     def clear(self):
-        if self.in_transaction:
-            self._clear()
-        else:
-            with self.lock:
-                self._clear()
+        self._clear()
         self.logger.log("Cleared all data in the database")
 
     def _clear(self):
         self.data.clear()
         self.logger.log("Internally cleared all data in the database")
 
+    @transaction_safe
     def exists(self, key):
-        if self.in_transaction:
-            return self._exists(key)
-        else:
-            with self.lock:
-                return self._exists(key)
+        return self._exists(key)
     
     def _exists(self, key):
         if key in self.data:
@@ -219,38 +224,26 @@ class inMemoryDB:
         else:
             self.logger.log(f"Key {key} not found")
             return False
-
+    
+    @transaction_safe_clean_data
     def keys(self):
         self.logger.log("Retrieving all keys")
-        if self.in_transaction:
-            return list(self.data.keys())
-        else:
-            self._clean_expired()
-            return list(self.data.keys())
+        return list(self.data.keys())
     
+    @transaction_safe_clean_data
     def values(self):
         self.logger.log("Retrieving all values")
-        if self.in_transaction:
-            return list(self.data.values())
-        else:    
-            self._clean_expired()
-            return list(self.data.values())
+        return list(self.data.values())
     
+    @transaction_safe_clean_data
     def items(self):
         self.logger.log("Retrieving all key-value pairs")
-        if self.in_transaction:
-            return list(self.data.items())
-        else:
-            self._clean_expired()
-            return list(self.data.items())
+        return list(self.data.items())
     
+    @transaction_safe_clean_data
     def size(self):
         self.logger.log(f"Retrieving size of the database")
-        if self.in_transaction:
-            return len(self.data)
-        else:
-            self._clean_expired()
-            return len(self.data)
+        return len(self.data)
     
     def _clean_expired(self):
         with self.lock:
@@ -277,4 +270,3 @@ class inMemoryDB:
             "size - Get the number of items in the database\n"
             "exit - Exit the command interface"
         )
-
