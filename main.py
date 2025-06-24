@@ -1,5 +1,6 @@
-from Command import command
+from command_handler import command
 
 if __name__ == "__main__":
-    cmd = command()
-    cmd.run()
+    # Start command loop
+    cmd_handler = command()
+    cmd_handler.run()
