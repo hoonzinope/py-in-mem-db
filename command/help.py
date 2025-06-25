@@ -23,5 +23,7 @@ class Help(Command):
             "begin - Start a transaction\n"
             "commit - Commit the current transaction\n"
             "rollback - Rollback the current transaction\n"
-            "exit - Exit the command interface"
+            "exit - Exit the command interface\n"
+            "alias <alias_name> <command> - Create an alias for a command\n"
+            "show-alias - Show all aliases\n"
         )

@@ -14,8 +14,12 @@ class Load(Command):
             # Load snapshot data
             self._load_snapshot()
 
+            # Load alias commands
+            self._load_alias()
+
             # Load AOF commands
             self._load_aof()
+
 
     def _load_snapshot(self):
         snapshot_data = self.persistence_manager.load_data()
@@ -48,3 +52,10 @@ class Load(Command):
             else:
                 continue
         self.memdb.in_load = False
+
+    def _load_alias(self):
+        alias_data = self.persistence_manager.load_alias()
+        if alias_data:
+            self.memdb.alias_command = alias_data
+        else:
+            self.memdb.alias_command = {}

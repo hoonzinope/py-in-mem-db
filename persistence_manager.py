@@ -7,6 +7,7 @@ class PesistenceManager:
         self.persistence_type = 'file'  # Default to file-based persistence
         self.snapshot_file = './meta-data/snapshot.db'
         self.aof_file = './meta-data/AOF.txt'
+        self.alias_file = './meta-data/alias.json'
 
         # Ensure the directory exists
         self.make_files()
@@ -15,6 +16,7 @@ class PesistenceManager:
         # Create snapshot and AOF files if they do not exist
         os.makedirs(os.path.dirname(self.snapshot_file), exist_ok=True)
         os.makedirs(os.path.dirname(self.aof_file), exist_ok=True)
+        os.makedirs(os.path.dirname(self.alias_file), exist_ok=True)
 
         if not os.path.exists(self.snapshot_file):
             with open(self.snapshot_file, 'wb') as file:
@@ -23,6 +25,10 @@ class PesistenceManager:
         if not os.path.exists(self.aof_file):
             with open(self.aof_file, 'w') as file:
                 file.write('')
+
+        if not os.path.exists(self.alias_file):
+            with open(self.alias_file, 'w') as file:
+                json.dump({}, file)
 
     # Save snapshot of the current state
     def save_snapshot(self, data):
@@ -62,3 +68,12 @@ class PesistenceManager:
         with open(self.aof_file, 'r') as file:
             commands = file.readlines()
         return commands
+
+    def save_alias(self, alias_dict):
+        with open(self.alias_file, 'w') as file:
+            json.dump(alias_dict, file)
+
+    def load_alias(self):
+        with open(self.alias_file, 'r') as file:
+            alias_dict = json.load(file)
+        return alias_dict

@@ -9,14 +9,31 @@ class Command:
         self.memdb = inMemoryDB()
 
         self.execute("load")  # Load initial data if available
+        self.alias_command = self.memdb.alias_command
 
     def execute(self, cmd):
+        cmd = self.convert_alias(cmd) if cmd != "load" else cmd
         command_obj = Parser.parse(cmd)
         if command_obj is None:
             self.return_msg("Invalid command. Type 'help' for a list of commands.")
             return
         else:
             return self.memdb.execute(command_obj)
+
+    def convert_alias(self, cmd):
+        parts = cmd.split()
+        if len(parts) < 2:
+            if parts[0] in self.alias_command:
+                return self.alias_command[parts[0]]
+            else:
+                return cmd
+
+        alias = parts[0]
+        if alias in self.alias_command:
+            command = self.alias_command[alias]
+            return command + " " + " ".join(parts[1:])
+
+        return cmd  # No alias found, return original command
 
     def return_msg(self, msg):
         self.logger.log(msg)
