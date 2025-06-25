@@ -41,5 +41,9 @@ class Parser:
             return COMMANDS['rollback'](original_command=cmd)
         elif action == "load":
             return COMMANDS['load']()
+        elif action == "alias":
+            return COMMANDS['alias'](original_command=cmd)
+        elif action == "show-alias":
+            return COMMANDS['show-alias'](original_command=cmd)
         else:
             return None

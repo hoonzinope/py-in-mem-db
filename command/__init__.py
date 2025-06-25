@@ -14,3 +14,5 @@ from .begin import Begin
 from .commit import Commit
 from .rollback import Rollback
 from .load import Load
+from .alias import Alias
+from .show_alias import ShowAlias

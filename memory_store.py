@@ -15,6 +15,8 @@ class inMemoryDB:
 
         self.in_load = False # when loading data, we should not lock & transaction
 
+        self.alias_command = {}  # Dictionary to store alias commands
+
         self.logger = logger(self.__class__.__name__)
         self.logger.log("Initialized in-memory database")
         # Initialize persistence manager if needed
@@ -62,5 +64,3 @@ class inMemoryDB:
             with self.lock:
                 if self.persistence_manager:
                     self.persistence_manager.save_snapshot(self.data)
-                self.logger.log("Data saved to persistence manager")
-
