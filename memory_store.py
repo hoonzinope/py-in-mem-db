@@ -1,41 +1,24 @@
 import time
 from threading import Thread, Lock
 from logger import logger
-import copy
-
-from persistence_manager import persistence_manager
-
-def transaction_safe(func):
-    def wrapper(self, *args, **kwargs):
-        if self.in_transaction:
-            return func(self, *args, **kwargs)
-        else:
-            with self.lock:
-                return func(self, *args, **kwargs)
-    return wrapper
-
-def transaction_safe_clean_data(func):
-    def wrapper(self, *args, **kwargs):
-        if self.in_transaction:
-            return func(self, *args, **kwargs)
-        else:
-            with self.lock:
-                # Clean expired keys before executing the function
-                self._clean_expired()
-                return func(self, *args, **kwargs)
-    return wrapper
+from persistence_manager import PesistenceManager
 
 class inMemoryDB:
     def __init__(self):
         self.data = {}
         self.org_data = {}
+
         self.lock = Lock()  # To ensure thread safety
+
         self.in_transaction = False  # Flag to indicate if a transaction is in progress
         self.transaction_commands = []
+
+        self.in_load = False # when loading data, we should not lock & transaction
+
         self.logger = logger(self.__class__.__name__)
         self.logger.log("Initialized in-memory database")
         # Initialize persistence manager if needed
-        self.persistence_manager = None  # Placeholder for persistence manager
+        self.persistence_manager = PesistenceManager()
 
         self.key_data_type = str  # Default key type
         self.value_data_type = str  # Default value type
@@ -44,19 +27,24 @@ class inMemoryDB:
         self.expiration_thread = Thread(target=self._delete_expired, daemon=True)
         self.expiration_thread.start()
 
+        # Start a background thread to save data periodically
+        self.save_thread = Thread(target=self._save, daemon=True)
+        self.save_thread.start()
+
     def execute(self, command):
         return command.execute(self, self.persistence_manager)
 
-        if key in self.data:
-            del self.data[key]
-            self.logger.log(f"Internally deleted {key}")
-        else:
-            self.logger.log(f"Attempted to internally delete {key}, but it does not exist")
     def _delete_expired(self):
         while True:
+            time.sleep(1)
             if not self.in_transaction:
                 self._clean_expired()
-                time.sleep(1)
+
+    # This method is used to clean expired keys from the database.
+    # method for external calls to clean expired keys
+    def clean_expired_keys(self):
+        if self.lock.locked():
+            self._clean_expired()
     
     def _clean_expired(self):
         current_time = time.time()
@@ -68,4 +56,11 @@ class inMemoryDB:
         for key in keys_to_delete:
             del self.data[key]
 
-    # TODO : Implement save and load methods for persistence
+    def _save(self):
+        while True:
+            time.sleep(10)
+            with self.lock:
+                if self.persistence_manager:
+                    self.persistence_manager.save_snapshot(self.data)
+                self.logger.log("Data saved to persistence manager")
+

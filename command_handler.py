@@ -1,16 +1,17 @@
 from memory_store import inMemoryDB
 from logger import logger
-from command_parser import CommandParser
+from command_parser import Parser
 
-class command:
+class Command:
     def __init__(self):
         self.logger = logger(self.__class__.__name__)
         self.logger.log("Command interface initialized")
-        self.parser = CommandParser()
         self.memdb = inMemoryDB()
 
+        self.execute("load")  # Load initial data if available
+
     def execute(self, cmd):
-        command_obj = self.parser.parse(cmd)
+        command_obj = Parser.parse(cmd)
         if command_obj is None:
             self.return_msg("Invalid command. Type 'help' for a list of commands.")
             return
@@ -25,7 +26,14 @@ class command:
         print("Type 'help' for a list of commands.")
         while True:
             cmd = input("cmd>> ")
-            if cmd.lower() == "exit":
+            if cmd.lower() == "exit" or cmd.lower() == "quit":
                 print("Exiting...")
                 break
-            self.execute(cmd)
+            elif cmd.strip() == "":
+                continue
+            elif cmd.lower() == "load":
+                print("Load command should not be executed directly.")
+                continue
+            response = self.execute(cmd)
+            if response is not None:
+                print(response)

@@ -1,5 +1,8 @@
 from command.command import Command
+from command.registry import register_command
 
+
+@register_command("help")
 class Help(Command):
     def __init__(self, original_command: str = None):
         super().__init__()

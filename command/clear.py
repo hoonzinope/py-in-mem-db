@@ -1,5 +1,7 @@
 from command.command import Command
+from command.registry import register_command
 
+@register_command("clear")
 class Clear(Command):
     def __init__(self, original_command: str = None):
         super().__init__()
@@ -9,12 +11,15 @@ class Clear(Command):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
+        if self.memdb.in_load:
+            return self._execute_clear()
+
         if self.memdb.in_transaction:
             self.memdb.transaction_commands.append(self.original_command)
             return self._execute_clear()
         else:
             with self.memdb.lock:
-                self.persistence_manager.append_AOF(self.original_command)
+                self.persistence_manager.append_aof(self.original_command)
                 return self._execute_clear()
             
     def _execute_clear(self):

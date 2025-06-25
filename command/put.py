@@ -1,6 +1,10 @@
 from command.command import Command
 import time
 
+from command.registry import register_command
+
+
+@register_command("put")
 class Put(Command):
     def __init__(self, key, value, expiration_time=None, original_command=None):
         super().__init__()
@@ -13,12 +17,15 @@ class Put(Command):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
+        if self.memdb.in_load:
+            return self._execute_put(self.key, self.value, self.expiration_time)
+
         if self.memdb.in_transaction:
             self.memdb.transaction_commands.append(self.original_command)
             return self._execute_put(self.key, self.value, self.expiration_time)
         else:
             with self.memdb.lock:
-                self.persistence_manager.append_AOF(self.original_command)
+                self.persistence_manager.append_aof(self.original_command)
                 return self._execute_put(self.key, self.value, self.expiration_time)
             
     def _execute_put(self, key, value, expiration_time):
