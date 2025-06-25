@@ -45,7 +45,7 @@ class PesistenceManager:
 
     def _append_to_file(self, data):
         with open(self.aof_file, 'a') as file:
-            file.write(data)
+            file.write(data + '\n')
 
     def _initialize_aof(self):
         with open(self.aof_file, 'w') as file:
