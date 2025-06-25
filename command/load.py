@@ -1,5 +1,5 @@
 from command.command import Command
-from command.registry import register_command, COMMANDS
+from command.registry import register_command, parse_command
 
 @register_command("load")
 class Load(Command):
@@ -34,21 +34,8 @@ class Load(Command):
             if not parts:
                 continue
             action = parts[0].lower()
-            if action == "put" and len(parts) in (3, 4):
-                key = parts[1]
-                value = parts[2]
-                expiration_time = int(parts[3]) if len(parts) == 4 else None
-                cmd_obj = COMMANDS['put'](key, value, expiration_time, original_command=command)
-                self.memdb.execute(cmd_obj)
-            elif action == "delete" and len(parts) == 2:
-                key = parts[1]
-                cmd_obj = COMMANDS['delete'](key, original_command=command)
-                self.memdb.execute(cmd_obj)
-            elif action == "clear":
-                cmd_obj = COMMANDS['clear'](original_command=command)
-                self.memdb.execute(cmd_obj)
-            elif action == "begin" or action == "commit":
-                continue
+            if action in ["put", "delete", "clear"]:
+                self.memdb.execute(parse_command(command))
             else:
                 continue
         self.memdb.in_load = False

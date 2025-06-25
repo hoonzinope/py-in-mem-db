@@ -16,6 +16,7 @@
 - transaction (begin, commit, rollback) 지원
 - backup 및 restore 기능
 - alias 명령어 지원
+- batch 명령어 지원 (한 번에 여러 명령어 실행)
 - Logger 클래스를 통한 체계적인 로깅 지원
 - 외부 의존성 없이 순수 파이썬 구현
 
@@ -68,6 +69,19 @@ cmd>> exit
 Exiting...
 ```
 
+#### batch 명령어 지원
+- `batch` 명령어를 사용하여 여러 명령어를 한 번에 실행할 수 있습니다.
+- 명령어는 `;`로 구분하며, 각 명령어는 별도의 줄에 작성할 수 있습니다.
+- 자동으로 트랜잭션 모드로 실행되며, 모든 명령어가 성공적으로 실행되어야 커밋됩니다.
+- 예시:
+```bash
+cmd>> batch put a 1 10000; put b 1 10000; get a; get b;
+Executing batch command not in transaction mode
+[None, None, '1', '1']
+cmd>> exit 
+Exiting...
+````
+
 ## 설치
 
 ```bash
@@ -112,7 +126,8 @@ Exiting...
 - `show-alias` : 현재 설정된 alias 목록을 출력합니다.
 - `alias <alias_name> <command>` : 명령어에 별칭을 설정합니다. 
   - 예: `alias k keys`는 `k`를 입력하면 `keys` 명령어를 실행합니다.
-
+- `batch <commands>` : 여러 명령어를 한 번에 실행합니다. 
+  - 예: `batch put a 1; put b 2; get a; get b;`는 `put`과 `get` 명령어를 순차적으로 실행합니다.
 ## 라이선스
 
 MIT License

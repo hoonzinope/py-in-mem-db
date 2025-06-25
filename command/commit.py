@@ -11,7 +11,8 @@ class Commit(Command):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
         if self.memdb.in_load:
-            return
+            return None
+
         try:
             if self.memdb.in_transaction:
                 self.memdb.in_transaction = False
@@ -24,7 +25,7 @@ class Commit(Command):
             else:
                 raise Exception("No transaction in progress to commit.")
         except Exception as e:
-            return f"Error committing transaction: {str(e)}"
+            print( f"Error committing transaction: {str(e)}" )
         finally:
             if self.memdb.lock.locked():
                 self.memdb.lock.release()
