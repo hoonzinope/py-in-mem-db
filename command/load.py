@@ -14,11 +14,12 @@ class Load(Command):
             # Load snapshot data
             self._load_snapshot()
 
+            # Load alias commands
+            self._load_alias()
+
             # Load AOF commands
             self._load_aof()
 
-            # Load alias commands
-            self._load_alias()
 
     def _load_snapshot(self):
         snapshot_data = self.persistence_manager.load_data()

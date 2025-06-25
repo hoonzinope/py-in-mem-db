@@ -21,9 +21,10 @@ class Alias(Command):
         if not self.original_command:
             return "No command provided for alias."
 
-        self._set_alias(self.original_command)
+        result = self._set_alias(self.original_command)
         if self.persistence_manager:
             self.persistence_manager.save_alias(self.alias_command)
+        return result
 
     def _set_alias(self, cmd):
         parts = cmd.split()
