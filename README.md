@@ -15,6 +15,7 @@
 - Lock 기반의 동시성 제어로 데이터 일관성 보장
 - transaction (begin, commit, rollback) 지원
 - backup 및 restore 기능
+- alias 명령어 지원
 - Logger 클래스를 통한 체계적인 로깅 지원
 - 외부 의존성 없이 순수 파이썬 구현
 
@@ -45,6 +46,27 @@
 - 데이터 변경 시마다 AOF(Append-Only File) 형식으로 로그가 기록됩니다.
   - (./meta-data/AOF.txt 파일에 저장됩니다.)
 - 재 시작시 snapshot.db 파일과 AOF.txt 파일을 읽어 데이터베이스를 복원합니다.
+
+#### alias 명령어 지원
+- 사용자가 자주 사용하는 명령어에 대해 alias(별칭)를 설정할 수 있습니다.
+- alias 정보는 `./meta-data/alias.json` 파일에 저장되어, 재 시작시 자동으로 로드됩니다.
+- `show-alias` 명령어로 현재 설정된 alias 목록을 확인할 수 있습니다.
+- 사용예시
+```bash
+cmd>> alias k keys
+cmd>> k
+['z', '2']
+cmd>> alias i items
+cmd>> i
+[('z', '1'), ('2', '1')]
+cmd>> show-alias
+set: put
+v: values
+k: keys
+i: items
+cmd>> exit
+Exiting...
+```
 
 ## 설치
 
@@ -87,6 +109,9 @@ Exiting...
 - `commit()` : 트랜잭션을 커밋합니다. 트랜잭션 내의 모든 변경 사항이 적용됩니다.
 - `rollback()` : 트랜잭션을 롤백합니다. 트랜잭션 내의 모든 변경 사항이 취소됩니다.
 - `exit()` : 커맨드 인터페이스를 종료합니다.
+- `show-alias` : 현재 설정된 alias 목록을 출력합니다.
+- `alias <alias_name> <command>` : 명령어에 별칭을 설정합니다. 
+  - 예: `alias k keys`는 `k`를 입력하면 `keys` 명령어를 실행합니다.
 
 ## 라이선스
 
