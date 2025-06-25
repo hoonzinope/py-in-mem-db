@@ -1,0 +1,64 @@
+import os
+import json
+import pickle
+
+class PesistenceManager:
+    def __init__(self):
+        self.persistence_type = 'file'  # Default to file-based persistence
+        self.snapshot_file = './meta-data/snapshot.db'
+        self.aof_file = './meta-data/AOF.txt'
+
+        # Ensure the directory exists
+        self.make_files()
+
+    def make_files(self):
+        # Create snapshot and AOF files if they do not exist
+        os.makedirs(os.path.dirname(self.snapshot_file), exist_ok=True)
+        os.makedirs(os.path.dirname(self.aof_file), exist_ok=True)
+
+        if not os.path.exists(self.snapshot_file):
+            with open(self.snapshot_file, 'wb') as file:
+                pickle.dump({}, file)
+
+        if not os.path.exists(self.aof_file):
+            with open(self.aof_file, 'w') as file:
+                file.write('')
+
+    # Save snapshot of the current state
+    def save_snapshot(self, data):
+        self._save_to_file(data)
+        self._initialize_aof()  # Ensure AOF is initialized
+
+    def _save_to_file(self, data):
+        with open(self.snapshot_file, 'wb') as file:
+            pickle.dump(data, file)
+
+    # Append data to the AOF (Append-Only File)
+    def append_aof(self, data):
+        self._append_to_file(data)
+
+    def _append_to_file(self, data):
+        with open(self.aof_file, 'a') as file:
+            file.write(data)
+
+    def _initialize_aof(self):
+        with open(self.aof_file, 'w') as file:
+            file.write('')
+
+    def load_data(self):
+        return self._load_snapshot()
+
+    def _load_snapshot(self):
+        data = {}
+        with open(self.snapshot_file, 'rb') as file:
+            data = pickle.load(file)
+        return data
+
+    def load_command(self):
+        return self._load_aof()
+
+    def _load_aof(self):
+        commands = []
+        with open(self.aof_file, 'r') as file:
+            commands = file.readlines()
+        return commands
