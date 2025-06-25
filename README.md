@@ -1,15 +1,20 @@
-# In-Memory DB (Python)
+# In-Memory Key-Value DB with python
 
-간단한 파이썬 기반 인메모리 데이터베이스 구현체입니다.
+간단한 파이썬 기반 인메모리 key-value 데이터베이스 구현체 입니다.
+
+## 버전
+- Python 3.8 이상
 
 ## 특징
 
 - 메모리 내에서 데이터 저장 및 조회
 - Key-Value 형태의 데이터 관리
 - CRUD(생성, 조회, 수정, 삭제) 지원
-- 데이터 만료 시간(TTL) 지원 (active 만료 + 백그라운드 스레드 방식)
+- 데이터 만료 시간(TTL) 지원 
+  - (조회시 만료(lazy) + 주기적 만료 스레드(active) 방식)
 - Lock 기반의 동시성 제어로 데이터 일관성 보장
 - transaction (begin, commit, rollback) 지원
+- backup 및 restore 기능
 - Logger 클래스를 통한 체계적인 로깅 지원
 - 외부 의존성 없이 순수 파이썬 구현
 
@@ -34,6 +39,13 @@
 - 트랜잭션 내에서 수행된 모든 작업은 `commit()` 호출 시에만 실제로 적용됩니다.
 - `rollback()`을 호출하면 트랜잭션 내의 모든 변경 사항이 취소됩니다.
 
+#### backup 및 restore 기능
+- 데이터베이스의 현재 상태는 백그라운드에서 주기적으로 백업됩니다.
+  - (현재 상태는 ./meta-data/snapshot.db 파일에 저장됩니다.) 
+- 데이터 변경 시마다 AOF(Append-Only File) 형식으로 로그가 기록됩니다.
+  - (./meta-data/AOF.txt 파일에 저장됩니다.)
+- 재 시작시 snapshot.db 파일과 AOF.txt 파일을 읽어 데이터베이스를 복원합니다.
+
 ## 설치
 
 ```bash
@@ -43,22 +55,20 @@ cd py-in-mem
 
 ## 사용 예시
 
-```python
-from MemDB import inMemoryDB
-
-db = inMemoryDB()
-db.put('user:1', "{'name': 'Alice', 'age': 30}")
-print(db.get('user:1'))  # {'name': 'Alice', 'age': 30}
-
-db.put('user:1', "{'name': 'Alice', 'age': 31}")  # 값 수정
-print(db.get('user:1'))  # {'name': 'Alice', 'age': 31}
-
-print(db.exists('user:1'))  # True
-print(db.keys())            # ['user:1']
-print(db.size())            # 1
-
-db.delete('user:1')
-print(db.get('user:1'))     # None
+```bash
+$ > python main.py
+[2025-06-25 13:43:45]   [Command]       log:Command interface initialized
+[2025-06-25 13:43:45]   [inMemoryDB]    log:Initialized in-memory database
+Welcome to the in-memory database command interface!
+Type 'help' for a list of commands.
+cmd>> keys
+['a', 'b', 'c']
+cmd>> delete c
+Appending to AOF: delete c
+cmd>> exists c
+False
+cmd>> exit 
+Exiting...
 ```
 
 ## API
@@ -80,4 +90,4 @@ print(db.get('user:1'))     # None
 
 ## 라이선스
 
-Apache License 2.0
+MIT License
