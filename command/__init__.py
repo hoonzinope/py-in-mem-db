@@ -18,3 +18,4 @@ from .alias import Alias
 from .show_alias import ShowAlias
 from .batch import Batch
 from .reset_alias import ResetAlias
+from .findkeys import FindKeys

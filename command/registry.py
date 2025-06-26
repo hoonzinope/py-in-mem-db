@@ -55,5 +55,8 @@ def parse_command(cmd):
     elif action == "batch":
         commands = cmd[len("batch "):].strip()
         return COMMANDS['batch'](commands)
+    elif action == "find-keys":
+        pattern = cmd[len("find-keys "):].strip()
+        return COMMANDS['find-keys'](pattern)
     else:
         return None
