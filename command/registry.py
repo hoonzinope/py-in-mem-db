@@ -1,3 +1,5 @@
+import shlex
+
 COMMANDS = {}
 def register_command(name):
     def decorator(cls):
@@ -6,7 +8,7 @@ def register_command(name):
     return decorator
 
 def parse_command(cmd):
-    parts = cmd.split()
+    parts = shlex.split(cmd.strip())
     if not parts:
         return None
     action = parts[0].lower()
@@ -48,6 +50,8 @@ def parse_command(cmd):
         return COMMANDS['alias'](original_command=cmd)
     elif action == "show-alias":
         return COMMANDS['show-alias'](original_command=cmd)
+    elif action == "reset-alias":
+        return COMMANDS['reset-alias'](original_command=cmd)
     elif action == "batch":
         commands = cmd[len("batch "):].strip()
         return COMMANDS['batch'](commands)
