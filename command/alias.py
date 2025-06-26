@@ -1,16 +1,12 @@
 from command.command import Command
-from command.registry import register_command
+from command.registry import register_command, COMMANDS
 
 @register_command("alias")
 class Alias(Command):
     def __init__(self, original_command=None):
         super().__init__()
         self.original_command = original_command
-        self.command_list = ["put", "get", "delete",
-                             "clear", "exists", "keys",
-                             "values", "items", "size",
-                             "help", "begin", "commit", "rollback",
-                             "alias", "load"]
+        self.command_list = [c for c  in COMMANDS.keys()]
         self.alias_command = {}
 
     def execute(self, memdb, persistence_manager):
