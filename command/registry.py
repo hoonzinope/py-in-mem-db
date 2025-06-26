@@ -53,10 +53,10 @@ def parse_command(cmd):
     elif action == "reset-alias":
         return COMMANDS['reset-alias'](original_command=cmd)
     elif action == "batch":
-        commands = cmd[len("batch "):].strip()
+        commands = " ".join(parts[1:])
         return COMMANDS['batch'](commands)
-    elif action == "find-keys":
-        pattern = cmd[len("find-keys "):].strip()
-        return COMMANDS['find-keys'](pattern)
+    elif action == "find":
+        commands = " ".join(parts[1:])
+        return COMMANDS['find'](commands)
     else:
         return None

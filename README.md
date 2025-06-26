@@ -17,7 +17,7 @@
 - backup 및 restore 기능
 - alias 명령어 지원
 - batch 명령어 지원 (한 번에 여러 명령어 실행)
-- find-keys 명령어 지원 (특정 패턴으로 키 검색)
+- find 명령어 지원 (특정 패턴으로 key, value 검색)
 - Logger 클래스를 통한 체계적인 로깅 지원
 - 외부 의존성 없이 순수 파이썬 구현
 
@@ -87,20 +87,26 @@ cmd>> exit
 Exiting...
 ````
 
-#### find-keys 명령어 지원
-- `find-keys` 명령어를 사용하여 특정 패턴으로 키를 검색할 수 있습니다.
-- option `-l` 또는 `--like`를 사용하여 와일드카드 패턴으로 검색할 수 있습니다.
-- option `-r` 또는 `--regex`를 사용하여 정규 표현식 패턴으로 검색할 수 있습니다.
+#### find 명령어 지원
+- `find -[k,v] -[r,l] <search>` 명령어를 사용하여 특정 패턴으로 키를 검색할 수 있습니다.
+  - option `-k` 또는 `--key`를 사용하여 키를 검색할 수 있습니다.
+  - option `-v` 또는 `--value`를 사용하여 값을 검색할 수 있습니다.
+  - option `-l` 또는 `--like`를 사용하여 와일드카드 패턴으로 검색할 수 있습니다.
+  - option `-r` 또는 `--regex`를 사용하여 정규 표현식 패턴으로 검색할 수 있습니다.
 - 예시:
 ```bash
-cmd>> find-keys -l k*
-['key1', 'key2', 'keys']
-cmd>> find-keys -l k?
-[]
-cmd>> find-keys -r k*
-['key1', 'key2', 'keys']
+cmd>> put a 1 10000
+cmd>> put b 2 10000
+cmd>> put c 1 10000
+cmd>> items
+[('a', '1'), ('b', '2'), ('c', '1')]
+cmd>> find -k a
+['a']
+cmd>> find -k -l *
+['a', 'b', 'c']
 cmd>> exit
 Exiting...
+
 ```
 
 ## 설치
