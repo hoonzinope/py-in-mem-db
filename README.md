@@ -17,6 +17,7 @@
 - backup 및 restore 기능
 - alias 명령어 지원
 - batch 명령어 지원 (한 번에 여러 명령어 실행)
+- find-keys 명령어 지원 (특정 패턴으로 키 검색)
 - Logger 클래스를 통한 체계적인 로깅 지원
 - 외부 의존성 없이 순수 파이썬 구현
 
@@ -85,6 +86,22 @@ Executing batch command not in transaction mode
 cmd>> exit 
 Exiting...
 ````
+
+#### find-keys 명령어 지원
+- `find-keys` 명령어를 사용하여 특정 패턴으로 키를 검색할 수 있습니다.
+- option `-l` 또는 `--like`를 사용하여 와일드카드 패턴으로 검색할 수 있습니다.
+- option `-r` 또는 `--regex`를 사용하여 정규 표현식 패턴으로 검색할 수 있습니다.
+- 예시:
+```bash
+cmd>> find-keys -l k*
+['key1', 'key2', 'keys']
+cmd>> find-keys -l k?
+[]
+cmd>> find-keys -r k*
+['key1', 'key2', 'keys']
+cmd>> exit
+Exiting...
+```
 
 ## 설치
 
