@@ -65,14 +65,22 @@ class Batch(Command):
         if not commands:
             return []
         tokens = shlex.split(commands.strip())
+        if not tokens:
+            return []  # Return an empty list if tokens is empty
         input_type = tokens[0]
         if input_type == "-c" or input_type == "--command":
+            if len(tokens) < 2:  # Ensure there are enough tokens
+                return []  # Return an empty list if insufficient tokens
             commands = " ".join(tokens[1:])
         elif input_type == "-f" or input_type == "--file":
+            if len(tokens) < 2:  # Ensure there are enough tokens
+                return []  # Return an empty list if insufficient tokens
             input_file_path = tokens[1]
             with open(input_file_path, 'r') as file:
                 commands = file.read()
         else: # default type is -c
+            if len(tokens) < 2:  # Ensure there are enough tokens
+                return []  # Return an empty list if insufficient tokens
             commands = " ".join(tokens[1:])
 
         command_list = []
