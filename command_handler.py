@@ -1,6 +1,7 @@
 from memory_store import inMemoryDB
 from logger import logger
 from command_parser import Parser
+import readline
 
 class Command:
     def __init__(self):
