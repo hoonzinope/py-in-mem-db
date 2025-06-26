@@ -6,7 +6,8 @@ class Alias(Command):
     def __init__(self, original_command=None):
         super().__init__()
         self.original_command = original_command
-        self.command_list = [c for c  in COMMANDS.keys()]
+        self.not_alias_command = ["alias", "load"]
+        self.command_list = [c for c  in COMMANDS.keys() if c not in self.not_alias_command]
         self.alias_command = {}
 
     def execute(self, memdb, persistence_manager):
@@ -30,8 +31,8 @@ class Alias(Command):
         alias_name = parts[1]
         command = parts[2]
 
-        if alias_name == "load" or command == "load":
-            return "Cannot create alias for 'load' command."
+        if alias_name in self.not_alias_command or command in self.not_alias_command:
+            return "Cannot create alias for reserved commands. ({})".format(self.not_alias_command)
 
         if alias_name in self.alias_command:
             return f"Alias '{alias_name}' already exists."
