@@ -7,9 +7,9 @@ class PesistenceManager:
 
     def __init__(self):
         self.persistence_type = 'file'  # Default to file-based persistence
-        self.snapshot_file = './meta-data/snapshot.db'
-        self.aof_file = './meta-data/AOF.txt'
-        self.alias_file = './meta-data/alias.json'
+        self.snapshot_file = os.path.join(os.path.dirname(__file__), 'meta-data', 'snapshot.db')
+        self.aof_file = os.path.join(os.path.dirname(__file__), 'meta-data', 'AOF.txt')
+        self.alias_file = os.path.join(os.path.dirname(__file__), 'meta-data', 'alias.json')
 
         # Ensure the directory exists
         self.make_files()

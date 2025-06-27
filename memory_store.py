@@ -1,6 +1,6 @@
 import time
 from threading import Thread, Lock
-from logger import logger
+from logger import Logger
 from persistence_manager import PesistenceManager
 
 class inMemoryDB:
@@ -25,7 +25,7 @@ class inMemoryDB:
 
         self.alias_command = {}  # Dictionary to store alias commands
 
-        self.logger = logger.get_logger()
+        self.logger = Logger.get_logger()
         self._log("Initialized in-memory database")
         # Initialize persistence manager if needed
         self.persistence_manager = PesistenceManager.get_instance()
