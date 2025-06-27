@@ -24,7 +24,15 @@ class Client:
     def receive_response(self):
         if not self.sock:
             raise ConnectionError("Client is not connected to the server.")
-        data = self.sock.recv(1024)
+        chunks = []
+        while True:
+            chunk = self.sock.recv(4096)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            if len(chunk) < 4096:
+                break
+        data = b''.join(chunks)
         return decode(data.decode('utf-8'))
 
     def close(self):

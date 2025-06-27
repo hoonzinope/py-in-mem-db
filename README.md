@@ -21,6 +21,9 @@
 - logger 클래스를 통한 로깅 지원
   - 에러 로그 프린트
   - 커맨드 입력 로그 지원 (백그라운드 스레드에서 명령어 기록)
+- server - client 구조로 구현
+  - 커맨드 인터페이스를 통해 데이터베이스와 상호작용
+  - resp protocol을 사용하여 클라이언트와 통신
 - 외부 의존성 없이 순수 파이썬 구현
 
 #### 만료(TTL) 기능
@@ -108,8 +111,12 @@ cmd>> find -k -l *
 ['a', 'b', 'c']
 cmd>> exit
 Exiting...
-
 ```
+
+#### server - client 구조
+- 서버-클라이언트 구조를 추가 구현해서, 멀티 클라이언트 환경에서도 사용할 수 있도록 했습니다.
+- `/protocol/server.py` 파일을 실행하면 서버가 시작되고, 클라이언트는 `/protocol/client.py` 파일을 통해 서버와 통신할 수 있습니다.
+- 서버는 RESP(`/protocol/codec.py`) 프로토콜을 사용하여 클라이언트와 데이터를 주고받습니다.
 
 ## 설치
 
@@ -132,6 +139,23 @@ cmd>> delete c
 Appending to AOF: delete c
 cmd>> exists c
 False
+cmd>> exit 
+Exiting...
+```
+
+## 서버-클라이언트 예시
+```bash
+$ > python server.py
+[2025-06-27 16:36:01]	[Command]	log:Command interface initialized
+[2025-06-27 16:36:01]	[inMemoryDB]	log:Initialized in-memory database
+[2025-06-27 16:36:01]	[Server]	log:Server started on localhost:8080
+Connection from ('127.0.0.1', 50631)
+
+$ > python client.py
+cmd>> items
+Received: [(b, 3), (c, 13), (d, 4)]
+cmd>> get b
+Received: 3
 cmd>> exit 
 Exiting...
 ```
