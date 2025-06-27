@@ -17,13 +17,10 @@ class inMemoryDB:
 
         self.alias_command = {}  # Dictionary to store alias commands
 
-        self.logger = logger(self.__class__.__name__)
-        self.logger.log("Initialized in-memory database")
+        self.logger = logger.get_logger()
+        self._log("Initialized in-memory database")
         # Initialize persistence manager if needed
         self.persistence_manager = PesistenceManager()
-
-        self.key_data_type = str  # Default key type
-        self.value_data_type = str  # Default value type
 
         # Start a background thread to periodically delete expired keys
         self.expiration_thread = Thread(target=self._delete_expired, daemon=True)
@@ -64,3 +61,6 @@ class inMemoryDB:
             with self.lock:
                 if self.persistence_manager:
                     self.persistence_manager.save_snapshot(self.data)
+
+    def _log(self, message):
+        self.logger.log(message, name=self.__class__.__name__)
