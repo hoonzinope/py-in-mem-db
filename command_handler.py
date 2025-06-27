@@ -7,7 +7,7 @@ import readline
 class Command:
     def __init__(self):
         self.logger = logger.get_logger()
-        self.logger.log("Command interface initialized")
+        self.log("Command interface initialized")
         self.memdb = inMemoryDB()
         self.command_parser = Parser()
 

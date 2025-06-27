@@ -29,10 +29,10 @@ class logger:
         timestamp = time.strftime(self.time_format, time.localtime())
         print(f"[{timestamp}]\t[{name}]\tlog:{message}")
 
-    def append_usage_log(self, command):
+    def append_usage_log(self, command, name="logger"):
         with self.lock:
             timestamp = time.strftime(self.time_format, time.localtime())
-            log_entry = f"[{timestamp}]\t[{self.name}]\tcommand:{command}\n"
+            log_entry = f"[{timestamp}]\t[{name}]\tcommand:{command}\n"
             self.command_log.append(log_entry)
             if len(self.command_log) >= self.batch_size:
                 self._flush_log()
