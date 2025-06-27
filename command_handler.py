@@ -8,7 +8,7 @@ class Command:
     def __init__(self):
         self.logger = logger.get_logger()
         self.log("Command interface initialized")
-        self.memdb = inMemoryDB()
+        self.memdb = inMemoryDB.get_instance()
         self.command_parser = Parser()
 
         self.execute("load")  # Load initial data if available

@@ -3,6 +3,8 @@ import json
 import pickle
 
 class PesistenceManager:
+    __instance = None
+
     def __init__(self):
         self.persistence_type = 'file'  # Default to file-based persistence
         self.snapshot_file = './meta-data/snapshot.db'
@@ -11,6 +13,12 @@ class PesistenceManager:
 
         # Ensure the directory exists
         self.make_files()
+
+    @staticmethod
+    def get_instance():
+        if PesistenceManager.__instance is None:
+            PesistenceManager.__instance = PesistenceManager()
+        return PesistenceManager.__instance
 
     def make_files(self):
         # Create snapshot and AOF files if they do not exist
