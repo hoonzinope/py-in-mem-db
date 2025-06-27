@@ -1,12 +1,10 @@
 from command.registry import parse_command
+from logger import logger
 
 class Parser:
-    @staticmethod
-    def parse(cmd):
-        """
-        Parses a command string and returns the corresponding command object.
+    def __init__(self):
+        self.logger = logger(self.__class__.__name__)
 
-        :param cmd: The command string to parse.
-        :return: An instance of the command class or None if the command is invalid.
-        """
+    def parse(self, cmd):
+        self.logger.append_usage_log(cmd)
         return parse_command(cmd)

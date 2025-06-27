@@ -1,5 +1,6 @@
 from command.command import Command
 from command.registry import register_command
+from logger import logger
 import shlex
 import argparse
 import re
@@ -9,6 +10,7 @@ class Find(Command):
     def __init__(self, pattern=None):
         super().__init__()
         self.pattern = pattern
+        self.logger = logger(self.__class__.__name__)
         self.error_msg =  ("Invalid pattern format. Use: "
                          "find -[k,v] <pattern> or "
                          "find -[k,v] -r <regex> or "
@@ -26,6 +28,7 @@ class Find(Command):
         self.persistence_manager = persistence_manager
 
         if not self.pattern:
+            self._log("No pattern provided for finding keys or values.")
             return "No pattern provided for finding keys."
 
         if memdb.in_load:
@@ -50,7 +53,7 @@ class Find(Command):
         elif self.args.value:
             check_list = list([v['value'] for v in self.memdb.data.values()])
         else:
-            print(self.error_msg)
+            self._log(self.error_msg)
             return []
         return self._pattern_execute(tokens, check_list)
 
@@ -62,7 +65,7 @@ class Find(Command):
         elif len(tokens) == 2:
             return self._exact_pattern_execute(tokens[1], check_list)
         else:
-            print(self.error_msg)
+            self._log(self.error_msg)
             return []
 
     def _regex_pattern_execute(self, pattern: str, checklist : list) -> list:
@@ -71,7 +74,7 @@ class Find(Command):
             matching_keys = [key for key in checklist if regex_pattern.match(key)]
             return matching_keys if matching_keys else []
         except re.error as e:
-            print(f"Invalid regex pattern: {e}")
+            self._log(f"Invalid regex pattern: {e}")
             return []
 
     def _like_pattern_execute(self, pattern: str, checklist : list) -> list:
@@ -80,7 +83,7 @@ class Find(Command):
             matching_keys = [key for key in checklist if re.match(regex_pattern, key)]
             return matching_keys if matching_keys else []
         except re.error as e:
-            print(f"Invalid like pattern: {e}")
+            self._log(f"Invalid like pattern: {e}")
             return []
 
     def _exact_pattern_execute(self, pattern: str, checklist : list) -> list:
@@ -91,3 +94,6 @@ class Find(Command):
         # 예: key* → ^key.*, *key → .*key$, *key* → .*key.*, key? → ^key.$
         regex = "^" + re.escape(pattern).replace(r"\*", ".*").replace(r"\?", ".") + "$"
         return regex
+
+    def _log(self, message):
+        self.logger.log(message)

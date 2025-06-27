@@ -1,11 +1,13 @@
 from command.command import Command
 from command.registry import register_command
+from logger import logger
 
 @register_command("commit")
 class Commit(Command):
     def __init__(self, original_command=None):
         super().__init__()
         self.original_command = original_command
+        self.logger = logger(self.__class__.__name__)
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb
@@ -21,11 +23,15 @@ class Commit(Command):
                 for command in self.memdb.transaction_commands:
                     self.persistence_manager.append_aof(command)
                 self.memdb.transaction_commands.clear()
+                self._log("Transaction committed successfully.")
                 return "Transaction committed successfully."
             else:
                 raise Exception("No transaction in progress to commit.")
         except Exception as e:
-            print( f"Error committing transaction: {str(e)}" )
+            self._log( f"Error committing transaction: {str(e)}" )
         finally:
             if self.memdb.lock.locked():
                 self.memdb.lock.release()
+
+    def _log(self, message):
+        self.logger.log(message)

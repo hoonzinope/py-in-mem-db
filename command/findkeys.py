@@ -1,5 +1,6 @@
 from command.command import Command
 from command.registry import register_command
+from logger import logger
 import shlex
 import re
 
@@ -8,6 +9,7 @@ class FindKeys(Command):
     def __init__(self, pattern=None):
         super().__init__()
         self.pattern = pattern
+        self.logger = logger(self.__class__.__name__)
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb
@@ -47,7 +49,7 @@ class FindKeys(Command):
                          "find-keys <pattern> or "
                          "find-keys -r <regex> or "
                          "find-keys -l <like-pattern>")
-            print(error_msg)
+            self._log(error_msg)
             return []
 
     def _regex_pattern_execute(self, pattern : str) -> list:
@@ -57,7 +59,7 @@ class FindKeys(Command):
             matching_keys = [key for key in keys if regex_pattern.match(key)]
             return matching_keys if matching_keys else []
         except re.error as e:
-            print(f"Invalid regex pattern: {e}")
+            self._log(f"Invalid regex pattern: {e}")
             return []
 
     def _like_pattern_execute(self, pattern : str) -> list:
@@ -67,7 +69,7 @@ class FindKeys(Command):
             matching_keys = [key for key in keys if re.match(regex_pattern, key)]
             return matching_keys if matching_keys else []
         except re.error as e:
-            print(f"Invalid like pattern: {e}")
+            self._log(f"Invalid like pattern: {e}")
             return []
 
     def _exact_pattern_execute(self, pattern : str) -> list:
@@ -79,3 +81,6 @@ class FindKeys(Command):
         # 예: key* → ^key.*, *key → .*key$, *key* → .*key.*, key? → ^key.$
         regex = "^" + re.escape(pattern).replace(r"\*", ".*").replace(r"\?", ".") + "$"
         return regex
+
+    def _log(self, message):
+        self.logger.log(message)

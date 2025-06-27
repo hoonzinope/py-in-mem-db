@@ -1,6 +1,7 @@
 from memory_store import inMemoryDB
 from logger import logger
 from command_parser import Parser
+import shlex
 import readline
 
 class Command:
@@ -8,21 +9,22 @@ class Command:
         self.logger = logger(self.__class__.__name__)
         self.logger.log("Command interface initialized")
         self.memdb = inMemoryDB()
+        self.command_parser = Parser()
 
         self.execute("load")  # Load initial data if available
         self.alias_command = self.memdb.alias_command
 
     def execute(self, cmd):
         cmd = self.convert_alias(cmd) if cmd != "load" else cmd
-        command_obj = Parser.parse(cmd)
+        command_obj = self.command_parser.parse(cmd)
         if command_obj is None:
-            self.return_msg("Invalid command. Type 'help' for a list of commands.")
+            self.log("Invalid command. Type 'help' for a list of commands.")
             return
         else:
             return self.memdb.execute(command_obj)
 
     def convert_alias(self, cmd):
-        parts = cmd.split()
+        parts = shlex.split(cmd)
         if len(parts) < 2:
             if parts[0] in self.alias_command:
                 return self.alias_command[parts[0]]
@@ -36,22 +38,23 @@ class Command:
 
         return cmd  # No alias found, return original command
 
-    def return_msg(self, msg):
-        self.logger.log(msg)
-
     def run(self):
-        print("Welcome to the in-memory database command interface!")
-        print("Type 'help' for a list of commands.")
+        self.log("Welcome to the in-memory database command interface!")
+        self.log("Type 'help' for a list of commands.")
         while True:
             cmd = input("cmd>> ")
             if cmd.lower() == "exit" or cmd.lower() == "quit":
-                print("Exiting...")
+                self.log("Exiting...")
+                self.logger.close()
                 break
             elif cmd.strip() == "":
                 continue
             elif cmd.lower() == "load":
-                print("Load command should not be executed directly.")
+                self.log("Load command should not be executed directly.")
                 continue
             response = self.execute(cmd)
             if response is not None:
                 print(response)
+
+    def log(self, message):
+        self.logger.log(message)

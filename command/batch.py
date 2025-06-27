@@ -1,5 +1,6 @@
 from command.command import Command
 from command.registry import register_command, parse_command
+from logger import logger
 import shlex
 
 @register_command("batch")
@@ -8,6 +9,7 @@ class Batch(Command):
         super().__init__()
         self.commands = commands
         self.results = []
+        self.logger = logger(self.__class__.__name__)
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb
@@ -17,10 +19,10 @@ class Batch(Command):
             raise RuntimeError("Cannot execute batch command during load operation")
 
         if self.memdb.in_transaction:
-            print("Executing batch command in transaction mode")
+            self._log("Executing batch command in transaction mode")
             return self._execute_batch_in_transaction(self.commands)
         else:
-            print("Executing batch command not in transaction mode")
+            self._log("Executing batch command not in transaction mode")
             return self._execute_batch_not_in_transaction(self.commands)
 
     # Execute the batch command in the context of a transaction
@@ -34,7 +36,7 @@ class Batch(Command):
         except Exception as e:
             # If an error occurs, rollback the transaction
             self.memdb.execute(parse_command("rollback"))
-            print("Error executing batch command:", e)
+            self._log("Error executing batch command:", e)
             return []
 
         return self.results
@@ -51,7 +53,7 @@ class Batch(Command):
         except Exception as e:
             # If an error occurs, rollback the transaction
             self.memdb.execute(parse_command("rollback"))
-            print("Error executing batch command:", e)
+            self._log("Error executing batch command:", e)
             return []
 
         self.memdb.execute(parse_command("commit"))
@@ -92,3 +94,6 @@ class Batch(Command):
                 else:
                     command_list.append(cmd)
         return command_list
+
+    def _log(self, message):
+        self.logger.log(message)
