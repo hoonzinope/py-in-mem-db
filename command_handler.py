@@ -1,14 +1,14 @@
 from memory_store import inMemoryDB
-from logger import logger
+from logger import Logger
 from command_parser import Parser
 import shlex
 import readline
 
 class Command:
     def __init__(self):
-        self.logger = logger.get_logger()
+        self.logger = Logger.get_logger()
         self.log("Command interface initialized")
-        self.memdb = inMemoryDB()
+        self.memdb = inMemoryDB.get_instance()
         self.command_parser = Parser()
 
         self.execute("load")  # Load initial data if available

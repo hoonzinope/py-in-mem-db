@@ -26,4 +26,7 @@ class Help(Command):
             "exit - Exit the command interface\n"
             "alias <alias_name> <command> - Create an alias for a command\n"
             "show-alias - Show all aliases\n"
+            "reset-alias - Reset all aliases\n"
+            "batch <commands> - Execute a batch of commands\n"
+            "find <commands> - Find keys based on a pattern\n"
         )

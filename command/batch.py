@@ -1,6 +1,6 @@
 from command.command import Command
 from command.registry import register_command, parse_command
-from logger import logger
+from logger import Logger
 import shlex
 
 @register_command("batch")
@@ -9,7 +9,7 @@ class Batch(Command):
         super().__init__()
         self.commands = commands
         self.results = []
-        self.logger = logger.get_logger()
+        self.logger = Logger.get_logger()
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb

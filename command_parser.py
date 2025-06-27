@@ -1,9 +1,9 @@
 from command.registry import parse_command
-from logger import logger
+from logger import Logger
 
 class Parser:
     def __init__(self):
-        self.logger = logger.get_logger()
+        self.logger = Logger.get_logger()
 
     def parse(self, cmd):
         self.logger.append_usage_log(cmd, name=self.__class__.__name__)

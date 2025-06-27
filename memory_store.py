@@ -1,9 +1,17 @@
 import time
 from threading import Thread, Lock
-from logger import logger
+from logger import Logger
 from persistence_manager import PesistenceManager
 
 class inMemoryDB:
+    __instance = None
+
+    @staticmethod
+    def get_instance():
+        if inMemoryDB.__instance is None:
+            inMemoryDB.__instance = inMemoryDB()
+        return inMemoryDB.__instance
+
     def __init__(self):
         self.data = {}
         self.org_data = {}
@@ -17,10 +25,10 @@ class inMemoryDB:
 
         self.alias_command = {}  # Dictionary to store alias commands
 
-        self.logger = logger.get_logger()
+        self.logger = Logger.get_logger()
         self._log("Initialized in-memory database")
         # Initialize persistence manager if needed
-        self.persistence_manager = PesistenceManager()
+        self.persistence_manager = PesistenceManager.get_instance()
 
         # Start a background thread to periodically delete expired keys
         self.expiration_thread = Thread(target=self._delete_expired, daemon=True)

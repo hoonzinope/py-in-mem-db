@@ -1,14 +1,14 @@
 from command.command import Command
 import copy
 from command.registry import register_command
-from logger import logger
+from logger import Logger
 
 @register_command("rollback")
 class Rollback(Command):
     def __init__(self, original_command=None):
         super().__init__()
         self.original_command = original_command
-        self.logger = logger.get_logger()
+        self.logger = Logger.get_logger()
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb

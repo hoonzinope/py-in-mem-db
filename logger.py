@@ -2,14 +2,14 @@ import threading
 import time
 import os
 
-class logger:
+class Logger:
     __instance = None
 
     def __init__(self):
         self.time_format = "%Y-%m-%d %H:%M:%S"
         # for logging command usage
         self.command_log = []
-        self.usage_log_file_path = "./meta-data/command_usage.log"
+        self.usage_log_file_path = os.path.join(os.path.dirname(__file__), 'meta-data', 'command_usage.log')
         # Ensure the directory exists
         os.makedirs(os.path.dirname(self.usage_log_file_path), exist_ok=True)
 
@@ -21,9 +21,9 @@ class logger:
 
     @staticmethod
     def get_logger():
-        if logger.__instance is None:
-            logger.__instance = logger()
-        return logger.__instance
+        if Logger.__instance is None:
+            Logger.__instance = Logger()
+        return Logger.__instance
 
     def log(self, message, name="logger"):
         timestamp = time.strftime(self.time_format, time.localtime())
