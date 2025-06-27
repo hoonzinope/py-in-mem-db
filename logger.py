@@ -3,8 +3,9 @@ import time
 import os
 
 class logger:
-    def __init__(self, name):
-        self.name = name
+    __instance = None
+
+    def __init__(self):
         self.time_format = "%Y-%m-%d %H:%M:%S"
         # for logging command usage
         self.command_log = []
@@ -18,9 +19,15 @@ class logger:
         self.thread = threading.Thread(target=self._flush, daemon=True)
         self.thread.start()
 
-    def log(self, message):
+    @staticmethod
+    def get_logger():
+        if logger.__instance is None:
+            logger.__instance = logger()
+        return logger.__instance
+
+    def log(self, message, name="logger"):
         timestamp = time.strftime(self.time_format, time.localtime())
-        print(f"[{timestamp}]\t[{self.name}]\tlog:{message}")
+        print(f"[{timestamp}]\t[{name}]\tlog:{message}")
 
     def append_usage_log(self, command):
         with self.lock:

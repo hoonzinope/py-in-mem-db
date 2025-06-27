@@ -8,7 +8,7 @@ class Rollback(Command):
     def __init__(self, original_command=None):
         super().__init__()
         self.original_command = original_command
-        self.logger = logger(self.__class__.__name__)
+        self.logger = logger.get_logger()
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb
@@ -22,8 +22,11 @@ class Rollback(Command):
                 self.memdb.transaction_commands = []
                 self.memdb.org_data = {}
             else:
-                self.logger.log("No transaction in progress to roll back.")
+                self._log("No transaction in progress to roll back.")
                 raise Exception("No transaction in progress to roll back.") 
         finally:    
             if self.memdb.lock.locked():
                 self.memdb.lock.release()
+
+    def _log(self, message):
+        self.logger.log(message, name=self.__class__.__name__)

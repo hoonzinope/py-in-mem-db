@@ -9,13 +9,14 @@ class FindKeys(Command):
     def __init__(self, pattern=None):
         super().__init__()
         self.pattern = pattern
-        self.logger = logger(self.__class__.__name__)
+        self.logger = logger.get_logger()
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
         if not self.pattern:
+            self._log("No pattern provided for finding keys.")
             return "No pattern provided for finding keys."
 
         if self.memdb.in_load:
@@ -83,4 +84,4 @@ class FindKeys(Command):
         return regex
 
     def _log(self, message):
-        self.logger.log(message)
+        self.logger.log(message, name=self.__class__.__name__)

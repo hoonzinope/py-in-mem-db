@@ -9,7 +9,7 @@ class Batch(Command):
         super().__init__()
         self.commands = commands
         self.results = []
-        self.logger = logger(self.__class__.__name__)
+        self.logger = logger.get_logger()
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb
@@ -96,4 +96,4 @@ class Batch(Command):
         return command_list
 
     def _log(self, message):
-        self.logger.log(message)
+        self.logger.log(message, name=self.__class__.__name__)

@@ -6,7 +6,7 @@ import readline
 
 class Command:
     def __init__(self):
-        self.logger = logger(self.__class__.__name__)
+        self.logger = logger.get_logger()
         self.logger.log("Command interface initialized")
         self.memdb = inMemoryDB()
         self.command_parser = Parser()
@@ -57,4 +57,4 @@ class Command:
                 print(response)
 
     def log(self, message):
-        self.logger.log(message)
+        self.logger.log(message, name=self.__class__.__name__)

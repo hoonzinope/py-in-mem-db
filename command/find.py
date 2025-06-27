@@ -10,7 +10,7 @@ class Find(Command):
     def __init__(self, pattern=None):
         super().__init__()
         self.pattern = pattern
-        self.logger = logger(self.__class__.__name__)
+        self.logger = logger.get_logger()
         self.error_msg =  ("Invalid pattern format. Use: "
                          "find -[k,v] <pattern> or "
                          "find -[k,v] -r <regex> or "
@@ -96,4 +96,4 @@ class Find(Command):
         return regex
 
     def _log(self, message):
-        self.logger.log(message)
+        self.logger.log(message, name=self.__class__.__name__)
