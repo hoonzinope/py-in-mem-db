@@ -1,6 +1,7 @@
 from memory_store import inMemoryDB
 from logger import Logger
 from command_parser import Parser
+from response import Response, STATUS_CODE
 import shlex
 import readline
 
@@ -14,12 +15,17 @@ class Command:
         self.execute("load")  # Load initial data if available
         self.alias_command = self.memdb.alias_command
 
-    def execute(self, cmd):
+    def execute(self, cmd) -> Response:
         cmd = self.convert_alias(cmd) if cmd != "load" else cmd
         command_obj = self.command_parser.parse(cmd)
         if command_obj is None:
-            self.log("Invalid command. Type 'help' for a list of commands.")
-            return
+            msg = "Invalid command. Type 'help' for a list of commands."
+            self.log(msg)
+            return Response(
+                status_code=STATUS_CODE["BAD_REQUEST"],
+                message=msg,
+                data=None
+            )
         else:
             return self.memdb.execute(command_obj)
 
@@ -38,6 +44,7 @@ class Command:
 
         return cmd  # No alias found, return original command
 
+    # run method to start the command interface (only for testing purposes)
     def run(self):
         self.log("Welcome to the in-memory database command interface!")
         self.log("Type 'help' for a list of commands.")

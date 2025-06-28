@@ -1,5 +1,7 @@
 from command.command import Command
 from command.registry import register_command
+from logger import Logger
+from response import Response, STATUS_CODE
 
 
 @register_command("delete")
@@ -8,21 +10,28 @@ class Delete(Command):
         super().__init__()
         self.key = key
         self.original_command = original_command
+        self.logger = Logger.get_logger()
 
     def execute(self, memdb, persistence_manager):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
         if self.memdb.in_load:
-            return self._execute_delete(self.key)
+            self._execute_delete(self.key)
 
         if self.memdb.in_transaction:
             self.memdb.transaction_commands.append(self.original_command)
-            return self._execute_delete(self.key)
+            self._execute_delete(self.key)
         else:
             with self.memdb.lock:
                 self.persistence_manager.append_aof(self.original_command)
-                return self._execute_delete(self.key)
+                self._execute_delete(self.key)
+
+        return Response(
+            status_code=STATUS_CODE["OK"],
+            message=f"Key '{self.key}' deleted successfully.",
+            data=None
+        )
             
     def _execute_delete(self, key: str):
         if key in self.memdb.data:
