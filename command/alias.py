@@ -31,7 +31,7 @@ class Alias(Command):
         if len(parts) != 3:
             msg = "Invalid alias command format. Use: alias <alias_name> <command>"
             self._log(msg)
-            return Response(STATUS_CODE.BAD_REQUEST, msg)
+            return Response(STATUS_CODE['BAD_REQUEST'], msg)
 
         alias_name = parts[1]
         command = parts[2]
@@ -39,22 +39,22 @@ class Alias(Command):
         if alias_name in self.not_alias_command or command in self.not_alias_command:
             msg = "Cannot create alias for reserved commands. ({})".format(self.not_alias_command)
             self._log(msg)
-            return Response(STATUS_CODE.BAD_REQUEST, msg)
+            return Response(STATUS_CODE['BAD_REQUEST'], msg)
 
         if alias_name in self.alias_command:
             msg = f"Alias '{alias_name}' already exists. Use a different name."
             self._log(msg)
-            return Response(STATUS_CODE.BAD_REQUEST, msg)
+            return Response(STATUS_CODE['BAD_REQUEST'], msg)
 
         if command not in self.command_list:
             msg = f"Command '{command}' is not a valid command. Available commands: {self.command_list}"
             self._log(msg)
-            return Response(STATUS_CODE.BAD_REQUEST, msg)
+            return Response(STATUS_CODE['BAD_REQUEST'], msg)
 
         self.alias_command[alias_name] = command
         msg = f"Alias '{alias_name}' set for command '{command}'."
         self._log(msg)
-        return Response(STATUS_CODE.OK, msg)
+        return Response(STATUS_CODE['OK'], msg)
 
     def _log(self, message):
         self.logger.log(message, name=self.__class__.__name__)
