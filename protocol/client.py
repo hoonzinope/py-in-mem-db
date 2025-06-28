@@ -49,7 +49,7 @@ class Client:
                     break
                 self.send_command(command)
                 response = self.receive_response()
-                print('Received:', response)
+                print(response)
         finally:
             self.close()
 

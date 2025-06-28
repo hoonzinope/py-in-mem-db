@@ -2,6 +2,8 @@ import time
 from threading import Thread, Lock
 from logger import Logger
 from persistence_manager import PesistenceManager
+from response import Response
+
 
 class inMemoryDB:
     __instance = None
@@ -38,7 +40,7 @@ class inMemoryDB:
         self.save_thread = Thread(target=self._save, daemon=True)
         self.save_thread.start()
 
-    def execute(self, command):
+    def execute(self, command) -> Response:
         return command.execute(self, self.persistence_manager)
 
     def _delete_expired(self):

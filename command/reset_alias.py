@@ -1,6 +1,7 @@
 from command.command import Command
 from command.registry import register_command
 from logger import Logger
+from response import Response, STATUS_CODE
 
 @register_command("reset-alias")
 class ResetAlias(Command):
@@ -14,13 +15,22 @@ class ResetAlias(Command):
         self.persistence_manager = persistence_manager
 
         if not self.original_command:
-            self._log("No command provided for resetting aliases.")
-            return "No command provided for resetting aliases."
+            msg = "No command provided for resetting aliases."
+            self._log(msg)
+            return Response(
+                status_code=STATUS_CODE["BAD_REQUEST"],
+                message=msg,
+                data=None
+            )
 
         response = self._reset_alias()
         if self.persistence_manager:
             self.persistence_manager.save_alias(self.memdb.alias_command)
-        return response
+        return Response(
+            status_code=STATUS_CODE["OK"],
+            message=response,
+            data=None
+        )
 
     def _reset_alias(self):
         # Clear the alias command dictionary

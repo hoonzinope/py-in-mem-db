@@ -1,6 +1,6 @@
 from command.command import Command
 from command.registry import register_command
-
+from response import Response, STATUS_CODE
 
 @register_command("help")
 class Help(Command):
@@ -9,10 +9,17 @@ class Help(Command):
         self.original_command = original_command
 
     def execute(self, memdb, persistence_manager):
+        return Response(
+            status_code=STATUS_CODE["OK"],
+            message="Available commands and their usage:",
+            data=self._get_help_text()
+        )
+
+    def _get_help_text(self):
         return (
             "Commands:\n"
             "put <key> <value> <expiration_time> - Store a value with a key and an expiration time in seconds (default 7 seconds)\n"
-            "get <key> - Retrieve a value by key \n"
+            "get <key> - Retrieve a value by key\n"
             "delete <key> - Remove a key-value pair\n"
             "clear - Clear the database\n"
             "exists <key> - Check if a key exists\n"

@@ -4,6 +4,7 @@ from logger import Logger
 import shlex
 import argparse
 import re
+from response import Response, STATUS_CODE
 
 @register_command("find")
 class Find(Command):
@@ -28,8 +29,9 @@ class Find(Command):
         self.persistence_manager = persistence_manager
 
         if not self.pattern:
-            self._log("No pattern provided for finding keys or values.")
-            return "No pattern provided for finding keys."
+            msg = "No pattern provided for finding keys or values."
+            self._log(msg)
+            return self._error_response(msg)
 
         if memdb.in_load:
             return self._execute_find()
@@ -57,7 +59,7 @@ class Find(Command):
             return []
         return self._pattern_execute(tokens, check_list)
 
-    def _pattern_execute(self, tokens: list, check_list: list) -> list:
+    def _pattern_execute(self, tokens: list, check_list: list) -> Response:
         if self.args.like is not None:
             return self._like_pattern_execute(self.args.like, check_list)
         elif self.args.regex is not None:
@@ -68,27 +70,27 @@ class Find(Command):
             self._log(self.error_msg)
             return []
 
-    def _regex_pattern_execute(self, pattern: str, checklist : list) -> list:
+    def _regex_pattern_execute(self, pattern: str, checklist : list) -> Response:
         try:
             regex_pattern = re.compile(pattern)
             matching_keys = [key for key in checklist if regex_pattern.match(key)]
-            return matching_keys if matching_keys else []
+            return self._success_response(matching_keys)
         except re.error as e:
             self._log(f"Invalid regex pattern: {e}")
-            return []
+            return self._error_response(f"Invalid regex pattern: {e}")
 
-    def _like_pattern_execute(self, pattern: str, checklist : list) -> list:
+    def _like_pattern_execute(self, pattern: str, checklist : list) -> Response:
         try:
             regex_pattern = self._wildcard_to_regex(pattern)
             matching_keys = [key for key in checklist if re.match(regex_pattern, key)]
-            return matching_keys if matching_keys else []
+            return self._success_response(matching_keys)
         except re.error as e:
             self._log(f"Invalid like pattern: {e}")
-            return []
+            return self._error_response(f"Invalid like pattern: {e}")
 
-    def _exact_pattern_execute(self, pattern: str, checklist : list) -> list:
+    def _exact_pattern_execute(self, pattern: str, checklist : list) -> Response:
         matching_keys = [key for key in checklist if key == pattern]
-        return matching_keys if matching_keys else []
+        return self._success_response(matching_keys)
 
     def _wildcard_to_regex(self, pattern: str) -> str:
         # 예: key* → ^key.*, *key → .*key$, *key* → .*key.*, key? → ^key.$
@@ -97,3 +99,17 @@ class Find(Command):
 
     def _log(self, message):
         self.logger.log(message, name=self.__class__.__name__)
+
+    def _error_response(self, message, data=None):
+        return Response(
+            status_code=STATUS_CODE["BAD_REQUEST"],
+            message=message,
+            data=data
+        )
+
+    def _success_response(self, data):
+        return Response(
+            status_code=STATUS_CODE["OK"],
+            message="Find command executed successfully",
+            data=data
+        )

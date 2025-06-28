@@ -1,6 +1,7 @@
 from command.command import Command
 from command.registry import register_command, parse_command
 from logger import Logger
+from response import Response, STATUS_CODE
 import shlex
 
 @register_command("batch")
@@ -20,10 +21,20 @@ class Batch(Command):
 
         if self.memdb.in_transaction:
             self._log("Executing batch command in transaction mode")
-            return self._execute_batch_in_transaction(self.commands)
+            result = self._execute_batch_in_transaction(self.commands)
+            return Response(
+                status_code=STATUS_CODE["OK"],
+                message="Batch command executed successfully",
+                data=result
+            )
         else:
             self._log("Executing batch command not in transaction mode")
-            return self._execute_batch_not_in_transaction(self.commands)
+            result = self._execute_batch_not_in_transaction(self.commands)
+            return Response(
+                status_code=STATUS_CODE["OK"],
+                message="Batch command executed successfully",
+                data=result
+            )
 
     # Execute the batch command in the context of a transaction
     def _execute_batch_in_transaction(self, commands):
@@ -32,7 +43,7 @@ class Batch(Command):
             for cmd in parsed_commands:
                 if cmd:
                     result = self.memdb.execute(parse_command(cmd))
-                    self.results.append(result)
+                    self.results.append(result.data)
         except Exception as e:
             # If an error occurs, rollback the transaction
             self.memdb.execute(parse_command("rollback"))
@@ -49,7 +60,7 @@ class Batch(Command):
             for cmd in parsed_commands:
                 if cmd:
                     result = self.memdb.execute(parse_command(cmd))
-                    self.results.append(result)
+                    self.results.append(result.data)
         except Exception as e:
             # If an error occurs, rollback the transaction
             self.memdb.execute(parse_command("rollback"))

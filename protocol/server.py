@@ -3,6 +3,7 @@ import threading
 from codec import encode, decode
 from command_handler import Command
 from logger import Logger
+from response import Response, STATUS_CODE
 
 class Server:
     def __init__(self, host='localhost', port=8080):
@@ -52,7 +53,17 @@ class Server:
             response = "No command received"
         else:
             response =  self.command.execute(request.strip())
-        return str(response) if response is not None else "Command executed successfully"
+
+        response_str = "None"
+        if isinstance(response, Response):
+            if response.status_code == STATUS_CODE["OK"]:
+                if response.data is not None:
+                    response_str = str(response.data)
+                else:
+                    response_str = "OK"
+            else:
+                response_str = f"Error: {response.message} (Status Code: {response.status_code})"
+        return response_str
 
     def log(self, message):
         self.logger.log(message, name=self.__class__.__name__)
