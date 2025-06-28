@@ -24,6 +24,7 @@
 - server - client 구조로 구현
   - 커맨드 인터페이스를 통해 데이터베이스와 상호작용
   - resp protocol을 사용하여 클라이언트와 통신
+- http 서버를 통한 RESTful API 제공
 - 외부 의존성 없이 순수 파이썬 구현
 
 #### 만료(TTL) 기능
@@ -118,8 +119,51 @@ Exiting...
 - `/protocol/server.py` 파일을 실행하면 서버가 시작되고, 클라이언트는 `/protocol/client.py` 파일을 통해 서버와 통신할 수 있습니다.
 - 서버는 RESP(`/protocol/codec.py`) 프로토콜을 사용하여 클라이언트와 데이터를 주고받습니다.
 
-## 설치
+#### HTTP 서버를 통한 RESTful API 제공
+- `/protocol/httpHandler.py` 파일을 실행하면 HTTP 서버가 시작됩니다.
+- HTTP 서버는 RESTful API를 제공하여, 클라이언트가 HTTP 요청을 통해 데이터베이스에 값을 저장하거나 조회할 수 있습니다.
+- API 엔드포인트는 다음과 같습니다:
+  - `get`
+    - `GET /keys`: 모든 키 목록을 반환합니다.
+    - `GET /values`: 모든 값 목록을 반환합니다.
+    - `GET /items`: 모든 키-값 쌍을 반환합니다.
+    - `GET /size`: 데이터베이스에 저장된 항목 수를 반환합니다.
+    - `GET /help`: 사용 가능한 명령어 목록을 반환합니다.
+    - `GET /show-alias`: 현재 설정된 alias 목록을 반환합니다.
+  - `post`
+    - `POST /get`: 키로 값을 조회합니다. 만료된 데이터는 자동으로 삭제됩니다.
+    - `POST /exists`: 키의 존재 여부를 확인합니다.
+    - `POST /alias`: alias를 설정합니다. 요청 본문에 JSON 형식으로 alias 정보를 전달합니다.
+    - `POST /find`: 특정 패턴으로 키를 검색합니다.
+    - `POST /clear`: 데이터베이스의 모든 데이터를 삭제합니다.
+  - `put`
+    - `PUT /put`: 키에 값을 저장합니다. 요청 본문에 JSON 형식으로 값을 전달합니다.
+    - `PUT /batch`: 여러 명령어를 한 번에 실행합니다. 요청 본문에 JSON 형식으로 명령어 목록을 전달합니다.
+  - `delete`
+    - `DELETE /delete`: 키-값 쌍을 삭제합니다.
+    - `DELETE /reset-alias`: 모든 alias를 초기화합니다.
+    
+- 전송시 JSON 형식으로 데이터를 주고받으며, 응답은 JSON 형식으로 반환됩니다.
+  - request 예시:
+    - POST /put HTTP/1.1 
+        ```json
+        {
+            "command": "a 10 10000"
+        }
+        ```
+  - 응답 예시:
+       ```json
+       {
+          "received": {
+              "command": "a 15 10000"
+          },
+          "status": 200,
+          "message": "Key 'a' set with value '15' and expiration time '10000'",
+          "data": null
+       }
+       ```
 
+## 설치
 ```bash
 git clone https://github.com/your-username/py-in-mem.git
 cd py-in-mem
@@ -145,19 +189,27 @@ Exiting...
 
 ## 서버-클라이언트 예시
 ```bash
-$ > python server.py
+$ > python ./protocol/server.py
 [2025-06-27 16:36:01]	[Command]	log:Command interface initialized
 [2025-06-27 16:36:01]	[inMemoryDB]	log:Initialized in-memory database
 [2025-06-27 16:36:01]	[Server]	log:Server started on localhost:8080
 Connection from ('127.0.0.1', 50631)
 
-$ > python client.py
+$ > python ./protocol/client.py
 cmd>> items
 Received: [(b, 3), (c, 13), (d, 4)]
 cmd>> get b
 Received: 3
 cmd>> exit 
 Exiting...
+```
+
+## HTTP 서버 예시
+```bash
+$ > python ./protocol/httpHandler.py
+[2025-06-28 12:29:12]	[Command]	log:Command interface initialized
+[2025-06-28 12:29:12]	[inMemoryDB]	log:Initialized in-memory database
+Starting HTTP server on port 8080...
 ```
 
 ## API
