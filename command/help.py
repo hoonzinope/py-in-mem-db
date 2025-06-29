@@ -8,7 +8,7 @@ class Help(Command):
         super().__init__()
         self.original_command = original_command
 
-    def execute(self, memdb, persistence_manager):
+    def execute(self, memdb, persistence_manager, session_id=None):
         return Response(
             status_code=STATUS_CODE["OK"],
             message="Available commands and their usage:",

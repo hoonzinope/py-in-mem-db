@@ -7,5 +7,5 @@ class Command(ABC):
         self.command_parser = None
 
     @abstractmethod
-    def execute(self, memdb, persistence_manager): #, *args, **kwargs
+    def execute(self, memdb, persistence_manager, session_id=None): #, *args, **kwargs
         pass

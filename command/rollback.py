@@ -11,7 +11,7 @@ class Rollback(Command):
         self.original_command = original_command
         self.logger = Logger.get_logger()
 
-    def execute(self, memdb, persistence_manager):
+    def execute(self, memdb, persistence_manager, session_id=None):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
         if self.memdb.in_load:
@@ -22,12 +22,8 @@ class Rollback(Command):
             )
 
         try:
-            if self.memdb.in_transaction:
-                self.memdb.data = copy.deepcopy(self.memdb.org_data)
-                self.memdb.in_transaction = False
-                self.memdb.transaction_commands = []
-                self.memdb.org_data = {}
-                self._log("Transaction rolled back successfully.")
+            if session_id in self.memdb.in_tx:
+                self._rollback(session_id)
                 return Response(
                     status_code=STATUS_CODE["OK"],
                     message="Transaction rolled back successfully.",
@@ -43,9 +39,16 @@ class Rollback(Command):
                 message=f"Rollback failed: {str(e)}",
                 data=None
             )
-        finally:
-            if self.memdb.lock.locked():
-                self.memdb.lock.release()
+
+    def _rollback(self, session_id):
+        if session_id in self.memdb.in_tx:
+            # Clear the transaction data
+            del self.memdb.in_tx[session_id]
+            del self.memdb.tx_commands[session_id]
+            del self.memdb.tx_data[session_id]
+            self._log(f"Transaction {session_id} rolled back successfully.")
+        else:
+            self._log(f"No transaction found for session {session_id} to roll back.")
 
     def _log(self, message):
         self.logger.log(message, name=self.__class__.__name__)

@@ -14,7 +14,7 @@ class Exists(Command):
         self.original_command = original_command
         self.logger = Logger.get_logger()
 
-    def execute(self, memdb, persistence_manager):
+    def execute(self, memdb, persistence_manager, session_id=None):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
@@ -22,11 +22,26 @@ class Exists(Command):
         if self.memdb.in_load:
             result = self._execute_exists(self.key)
 
-        if memdb.in_transaction:
-            result = self._execute_exists(self.key)
-        else:
+        if session_id not in self.memdb.in_tx:
             with self.memdb.lock:
                 result = self._execute_exists(self.key)
+        else:
+            self.memdb.tx_commands[session_id].append(self.original_command)
+            copy = self.memdb.tx_data[session_id]["copy"]
+            snapshot = self.memdb.tx_data[session_id]["snapshot"]
+            if self.key in copy:
+                if copy[self.key]["expiration_time"] is None or copy[self.key]["expiration_time"] > time.time():
+                    result = True
+                else:
+                    del copy[self.key]
+                    result = False
+            elif self.key in snapshot:
+                if snapshot[self.key]["expiration_time"] is None or snapshot[self.key]["expiration_time"] > time.time():
+                    result = True
+                else:
+                    result = False
+            else:
+                result = False
 
         return Response(
             status_code=STATUS_CODE["OK"],

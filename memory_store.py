@@ -16,15 +16,16 @@ class inMemoryDB:
 
     def __init__(self):
         self.data = {}
-        self.org_data = {}
+
+        # self.org_data = {}
+        # self.in_transaction = False  # Flag to indicate if a transaction is in progress
+        # self.transaction_commands = []
+        self.tx_data = {}  # Dictionary to store transaction data
+        self.in_tx = {} # store transaction state for each thread
+        self.tx_commands = {} # Dictionary to store transaction commands for each thread
 
         self.lock = Lock()  # To ensure thread safety
-
-        self.in_transaction = False  # Flag to indicate if a transaction is in progress
-        self.transaction_commands = []
-
         self.in_load = False # when loading data, we should not lock & transaction
-
         self.alias_command = {}  # Dictionary to store alias commands
 
         self.logger = Logger.get_logger()
@@ -40,14 +41,15 @@ class inMemoryDB:
         self.save_thread = Thread(target=self._save, daemon=True)
         self.save_thread.start()
 
-    def execute(self, command) -> Response:
-        return command.execute(self, self.persistence_manager)
+    def execute(self, command, session_id = None) -> Response:
+        if session_id is None:
+            session_id = self.internal_session_id
+        return command.execute(self, self.persistence_manager, session_id)
 
     def _delete_expired(self):
         while True:
             time.sleep(1)
-            if not self.in_transaction:
-                self._clean_expired()
+            self._clean_expired()
 
     # This method is used to clean expired keys from the database.
     # method for external calls to clean expired keys

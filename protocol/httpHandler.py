@@ -16,6 +16,7 @@ class HttpHandler(BaseHTTPRequestHandler):
     def __init__(self, request, client_address, server):
         super().__init__(request, client_address, server)
         self.server = server
+        self.client_address = client_address
         self.type = None
         print(f"New request from {client_address}")
 
@@ -98,7 +99,8 @@ class HttpHandler(BaseHTTPRequestHandler):
 
     def _return_response(self, request_data = None):
         command_string = self.path.strip("/") + " " + request_data['command'] if request_data else self.path.strip("/")
-        response_obj = command.execute(command_string)
+        session_id = self.client_address[1]
+        response_obj = command.execute(command_string, session_id)
         response = {
             'received': request_data,
             'status': response_obj.status_code,

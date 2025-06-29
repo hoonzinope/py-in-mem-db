@@ -25,6 +25,7 @@
   - 커맨드 인터페이스를 통해 데이터베이스와 상호작용
   - resp protocol을 사용하여 클라이언트와 통신
 - http 서버를 통한 RESTful API 제공
+  - json 형식으로 데이터 통신
 - 외부 의존성 없이 순수 파이썬 구현
 
 #### 만료(TTL) 기능
@@ -118,6 +119,8 @@ Exiting...
 - 서버-클라이언트 구조를 추가 구현해서, 멀티 클라이언트 환경에서도 사용할 수 있도록 했습니다.
 - `/protocol/server.py` 파일을 실행하면 서버가 시작되고, 클라이언트는 `/protocol/client.py` 파일을 통해 서버와 통신할 수 있습니다.
 - 서버는 RESP(`/protocol/codec.py`) 프로토콜을 사용하여 클라이언트와 데이터를 주고받습니다.
+- 서버는 기본적으로 `localhost:8080`에서 실행됩니다.
+- transaction을 지원합니다.
 
 #### HTTP 서버를 통한 RESTful API 제공
 - `/protocol/httpHandler.py` 파일을 실행하면 HTTP 서버가 시작됩니다.
@@ -142,6 +145,9 @@ Exiting...
   - `delete`
     - `DELETE /delete`: 키-값 쌍을 삭제합니다.
     - `DELETE /reset-alias`: 모든 alias를 초기화합니다.
+- HTTP 서버는 기본적으로 `localhost:8080`에서 실행됩니다.
+- 응답은 JSON 형식으로 반환됩니다.
+- transaction을 지원합니다.
     
 - 전송시 JSON 형식으로 데이터를 주고받으며, 응답은 JSON 형식으로 반환됩니다.
   - request 예시:

@@ -12,20 +12,20 @@ class Delete(Command):
         self.original_command = original_command
         self.logger = Logger.get_logger()
 
-    def execute(self, memdb, persistence_manager):
+    def execute(self, memdb, persistence_manager, session_id=None):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
         if self.memdb.in_load:
             self._execute_delete(self.key)
 
-        if self.memdb.in_transaction:
-            self.memdb.transaction_commands.append(self.original_command)
-            self._execute_delete(self.key)
-        else:
+        if session_id not in self.memdb.in_tx:
             with self.memdb.lock:
                 self.persistence_manager.append_aof(self.original_command)
                 self._execute_delete(self.key)
+        else:
+            self.memdb.tx_commands[session_id].append(self.original_command)
+            del self.memdb.tx_data[session_id]["copy"][self.key]
 
         return Response(
             status_code=STATUS_CODE["OK"],
