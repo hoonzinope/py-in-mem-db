@@ -5,6 +5,7 @@ import shlex
 import argparse
 import re
 from response import Response, STATUS_CODE
+import time
 
 @register_command("find")
 class Find(Command):
@@ -24,7 +25,7 @@ class Find(Command):
         self.parser.add_argument('pattern', nargs='?', default=None)  # 옵션 없이 패턴만 올 경우
         self.args = None  # To store parsed arguments
 
-    def execute(self, memdb, persistence_manager):
+    def execute(self, memdb, persistence_manager, session_id=None):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
@@ -36,11 +37,14 @@ class Find(Command):
         if memdb.in_load:
             return self._execute_find()
 
-        if memdb.in_transaction:
-            return self._execute_find()
-        else:
+        if session_id not in memdb.in_tx:
+            # If not in transaction, we need to lock the database
             with memdb.lock:
                 return self._execute_find()
+        else:
+            # If in transaction, we can append the command to the transaction list
+            self.memdb.tx_commands[session_id].append(self.pattern)
+            return self._execute_find_in_transaction(session_id)
 
     # find keys or values in the database that match the given pattern.
     # find -k <pattern> for keys,
@@ -57,6 +61,40 @@ class Find(Command):
         else:
             self._log(self.error_msg)
             return []
+        return self._pattern_execute(tokens, check_list)
+
+    def _execute_find_in_transaction(self, session_id):
+        copy = self.memdb.tx_data[session_id]["copy"]
+        snapshot = self.memdb.tx_data[session_id]["snapshot"]
+
+        tokens = shlex.split(self.pattern)
+        self.args = self.parser.parse_args(tokens)
+        check_list = []
+        if self.args.key:
+            for key in snapshot.keys():
+                if key not in copy:
+                    if snapshot[key]['expiration_time'] is None or snapshot[key]['expiration_time'] > time.time():
+                        copy[key] = snapshot[key]
+                        check_list.append(key)
+                else:
+                    if copy[key]["expiration_time"] is None or copy[key]["expiration_time"] > time.time():
+                        check_list.append(key)
+                    else:
+                        del copy[key]
+        elif self.args.value:
+            for key, value in snapshot.items():
+                if key not in copy:
+                    if value['expiration_time'] is None or value['expiration_time'] > time.time():
+                        copy[key] = value
+                        check_list.append(value['value'])
+                else:
+                    if copy[key]["expiration_time"] is None or copy[key]["expiration_time"] > time.time():
+                        check_list.append(copy[key]["value"])
+                    else:
+                        del copy[key]
+        else:
+            self._log(self.error_msg)
+            check_list = []
         return self._pattern_execute(tokens, check_list)
 
     def _pattern_execute(self, tokens: list, check_list: list) -> Response:

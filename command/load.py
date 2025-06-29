@@ -6,7 +6,7 @@ class Load(Command):
     def __init__(self):
         super().__init__()
 
-    def execute(self, memdb, persistence_manager):
+    def execute(self, memdb, persistence_manager, session_id=None):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 

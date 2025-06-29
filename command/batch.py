@@ -12,27 +12,28 @@ class Batch(Command):
         self.results = []
         self.logger = Logger.get_logger()
 
-    def execute(self, memdb, persistence_manager):
+    def execute(self, memdb, persistence_manager, session_id=None):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
         if self.memdb.in_load:
             raise RuntimeError("Cannot execute batch command during load operation")
 
-        if self.memdb.in_transaction:
-            self._log("Executing batch command in transaction mode")
+        if session_id not in self.memdb.in_tx:
+            # If not in transaction, we need to lock the database
+            with self.memdb.lock:
+                self._log("Executing batch command with lock")
+                result = self._execute_batch_not_in_transaction(self.commands, session_id)
+                return Response(
+                    status_code=STATUS_CODE["OK"],
+                    message="Batch command executed successfully",
+                    data=result
+                )
+        else:
             result = self._execute_batch_in_transaction(self.commands)
             return Response(
                 status_code=STATUS_CODE["OK"],
-                message="Batch command executed successfully",
-                data=result
-            )
-        else:
-            self._log("Executing batch command not in transaction mode")
-            result = self._execute_batch_not_in_transaction(self.commands)
-            return Response(
-                status_code=STATUS_CODE["OK"],
-                message="Batch command executed successfully",
+                message="Batch command executed successfully in transaction",
                 data=result
             )
 
@@ -53,21 +54,21 @@ class Batch(Command):
         return self.results
 
     # Execute the batch command in the context of a lock
-    def _execute_batch_not_in_transaction(self, commands):
+    def _execute_batch_not_in_transaction(self, commands, session_id):
         parsed_commands = self._convert_batch_to_commands(commands)
-        self.memdb.execute(parse_command("begin"))
+        self.memdb.execute(parse_command("begin"), session_id=session_id)
         try:
             for cmd in parsed_commands:
                 if cmd:
-                    result = self.memdb.execute(parse_command(cmd))
+                    result = self.memdb.execute(parse_command(cmd), session_id=session_id)
                     self.results.append(result.data)
         except Exception as e:
             # If an error occurs, rollback the transaction
             self.memdb.execute(parse_command("rollback"))
-            self._log("Error executing batch command:", e)
+            self._log(f"Error executing batch command:{e}")
             return []
 
-        self.memdb.execute(parse_command("commit"))
+        self.memdb.execute(parse_command("commit"), session_id=session_id)
         return self.results
 
     # Convert the batch command string into a list of individual commands

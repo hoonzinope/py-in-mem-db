@@ -16,20 +16,23 @@ class Put(Command):
         self.original_command = original_command
         self.logger = Logger.get_logger()
 
-    def execute(self, memdb, persistence_manager):
+    def execute(self, memdb, persistence_manager, session_id=None):
         self.memdb = memdb
         self.persistence_manager = persistence_manager
 
         if self.memdb.in_load:
             self._execute_put(self.key, self.value, self.expiration_time)
 
-        if self.memdb.in_transaction:
-            self.memdb.transaction_commands.append(self.original_command)
-            self._execute_put(self.key, self.value, self.expiration_time)
-        else:
+        if session_id not in self.memdb.in_tx:
+            # If not in transaction, we need to lock the database
             with self.memdb.lock:
                 self.persistence_manager.append_aof(self.original_command)
                 self._execute_put(self.key, self.value, self.expiration_time)
+        else:
+            # If in transaction, we can append the command to the transaction list
+            self.memdb.tx_commands[session_id].append(self.original_command)
+            self._execute_put_in_transaction(self.value, self.expiration_time, session_id)
+
         return Response(
             status_code=STATUS_CODE["OK"],
             message=f"Key '{self.key}' set with value '{self.value}' and expiration time '{self.expiration_time}'",
@@ -43,6 +46,21 @@ class Put(Command):
             "value": value,
             "expiration_time": expiration_time
         }
+
+    def _execute_put_in_transaction(self, value, expiration_time, session_id):
+        copy = self.memdb.tx_data[session_id]["copy"]
+        expiration_time = self._convert_expiration_time_parameter(expiration_time)
+
+        if self.key in copy:
+            # Update existing key
+            copy[self.key]["value"] = value
+            copy[self.key]["expiration_time"] = expiration_time
+        else:
+            # Add new key
+            copy[self.key] = {
+                "value": value,
+                "expiration_time": expiration_time
+            }
 
     def _check_key_value(self, key, value):
         if not isinstance(key, str) or not isinstance(value, str):

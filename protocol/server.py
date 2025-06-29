@@ -37,7 +37,7 @@ class Server:
                 request = decode(request)  # Decode the request using the codec
                 self.log(f"Received request: {request} from {addr}")
 
-                response = self.process_request(request)
+                response = self.process_request(request, addr)
                 response = encode(response)  # Encode the response using the codec
                 client_socket.send(response.encode('utf-8'))
         except Exception as e:
@@ -45,14 +45,14 @@ class Server:
         finally:
             client_socket.close()
 
-    def process_request(self, request):
+    def process_request(self, request, addr):
         # Here you would process the request and return a response.
         # For simplicity, we just echo back the request.
         response = ""
         if request.strip() == "":
             response = "No command received"
         else:
-            response =  self.command.execute(request.strip())
+            response =  self.command.execute(request.strip(), session_id=addr[1])
 
         response_str = "None"
         if isinstance(response, Response):

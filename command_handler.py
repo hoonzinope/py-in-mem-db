@@ -11,11 +11,14 @@ class Command:
         self.log("Command interface initialized")
         self.memdb = inMemoryDB.get_instance()
         self.command_parser = Parser()
+        self.i_session_id = "00000"
 
         self.execute("load")  # Load initial data if available
         self.alias_command = self.memdb.alias_command
 
-    def execute(self, cmd) -> Response:
+    def execute(self, cmd, session_id = None) -> Response:
+        if session_id is None:
+            session_id = self.i_session_id
         cmd = self.convert_alias(cmd) if cmd != "load" else cmd
         command_obj = self.command_parser.parse(cmd)
         if command_obj is None:
@@ -27,7 +30,7 @@ class Command:
                 data=None
             )
         else:
-            return self.memdb.execute(command_obj)
+            return self.memdb.execute(command_obj, session_id)
 
     def convert_alias(self, cmd):
         parts = shlex.split(cmd)
