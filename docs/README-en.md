@@ -1,6 +1,4 @@
-# In-Memory Key-Value DB with python
-
-[한국어 문서](./docs/README-ko.md)
+# In-Memory Key-Value DB with Python
 
 A simple in-memory key-value database implementation built with Python.
 
