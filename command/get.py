@@ -52,8 +52,8 @@ class Get(Command):
             return self.memdb.data[key]["value"]
 
     def _execute_get_in_transaction(self, key, session_id):
-        copy = self.memdb.tx_commands[session_id]["copy"]
-        snapshot = self.memdb.tx_commands[session_id]["snapshot"]
+        copy = self.memdb.tx_data[session_id]["copy"]
+        snapshot = self.memdb.tx_data[session_id]["snapshot"]
         if self.key in copy:
             if copy[self.key]["expiration_time"] is None or copy[self.key]["expiration_time"] > time.time():
                 return Response(
