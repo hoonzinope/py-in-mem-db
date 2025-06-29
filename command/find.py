@@ -93,7 +93,6 @@ class Find(Command):
                     else:
                         del copy[key]
         else:
-            self._log(self.error_msg)
             check_list = []
         return self._pattern_execute(tokens, check_list)
 
