@@ -25,7 +25,8 @@ class Begin(Command):
             self.memdb.in_tx[session_id] = True
             self.memdb.tx_commands[session_id] = [self.original_command]
             self.memdb.tx_data[session_id] = {"copy": {}, "snapshot": {}}
-            self.memdb.tx_data[session_id]["snapshot"] = copy.deepcopy(self.memdb.data)
+            with self.memdb.lock:
+                self.memdb.tx_data[session_id]["snapshot"] = copy.deepcopy(self.memdb.data)
         else:
             # If already in a transaction for this session, just append the command
             self._log(f"Appending command to existing transaction for session {session_id}")

@@ -52,9 +52,10 @@ class Commit(Command):
                     self._log(f"Snapshot mismatch for key {key}. Cannot commit transaction.")
                     raise Exception("Snapshot mismatch. Cannot commit transaction.")
             # Commit the transaction
-            for key, value in copy.items():
-                if value["expiration_time"] is None or value["expiration_time"] > time.time():
-                    self.memdb.data[key] = value
+            with self.memdb.lock:
+                for key, value in copy.items():
+                    if value["expiration_time"] is None or value["expiration_time"] > time.time():
+                        self.memdb.data[key] = value
 
             # append the commands to AOF
             for command in self.memdb.tx_commands[session_id]:
